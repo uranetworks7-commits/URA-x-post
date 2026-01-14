@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
 import type { User, Post } from './post-card';
 import { useState } from 'react';
-import { PostIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 import Link from 'next/link';
 
 interface HeaderProps {

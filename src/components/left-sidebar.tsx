@@ -24,7 +24,7 @@ import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
 import type { User, Post } from './post-card';
-import { PostIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 

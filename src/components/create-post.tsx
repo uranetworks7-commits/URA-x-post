@@ -8,7 +8,7 @@ import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import type { User } from './post-card';
-import { PostIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 import { Progress } from './ui/progress';
 import { MediaPostDialog } from './media-post-dialog';
 
