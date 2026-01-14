@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Search, Home, Users, Clapperboard, Store, Menu, LogOut, Settings, PenSquare, BarChart, ThumbsUp, MessageSquare, ShieldCheck, Copyright } from 'lucide-react';
@@ -10,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
 import type { User, Post } from './post-card';
 import { useState } from 'react';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './ura-icon';
 import Link from 'next/link';
 
 interface HeaderProps {
@@ -39,8 +40,8 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2">
-           <UraIcon className="h-8 w-8" />
-          <h1 className="text-xl font-bold text-primary hidden sm:block">URA-X</h1>
+           <PostIcon className="h-8 w-8" />
+          <h1 className="text-xl font-bold text-primary hidden sm:block">POST-X</h1>
         </div>
       </div>
       <nav className="hidden md:flex items-center gap-2">
@@ -112,7 +113,7 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
                      <Avatar className="h-8 w-8">
                        <AvatarImage src={currentUser.avatar} />
                        <AvatarFallback>
-                         {currentUser.avatar ? currentUser.name.charAt(0) : <UraIcon className="h-5 w-5" />}
+                         {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-5 w-5" />}
                        </AvatarFallback>
                      </Avatar>
                   </Button>
@@ -123,7 +124,7 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
                       <Avatar>
                           <AvatarImage src={currentUser.avatar} />
                           <AvatarFallback>
-                            {currentUser.avatar ? currentUser.name.charAt(0) : <UraIcon className="h-6 w-6" />}
+                            {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-6 w-6" />}
                           </AvatarFallback>
                       </Avatar>
                       <div>

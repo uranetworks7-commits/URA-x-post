@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +9,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 
 interface LoginPageProps {
   onLogin: (name: string, mainAccountUsername: string) => void;
@@ -41,8 +42,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
-                <UraIcon className="h-10 w-10" />
-                 <h1 className="text-3xl font-bold text-primary">URA-X</h1>
+                <PostIcon className="h-10 w-10" />
+                 <h1 className="text-3xl font-bold text-primary">POST-X</h1>
             </div>
           <CardTitle>Welcome Back</CardTitle>
           <CardDescription>Enter your credentials to log in</CardDescription>

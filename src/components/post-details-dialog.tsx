@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import {
@@ -7,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 import type { Post, User } from './post-card';
 import { formatDistanceToNow } from 'date-fns';
 import { ThumbsUp, MessageSquare, Eye, DollarSign, BadgeCheck } from 'lucide-react';
@@ -61,7 +62,7 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
                 <Avatar>
                     <AvatarImage src={post.user.avatar} alt={post.user.name} />
                     <AvatarFallback>
-                        {post.user.avatar ? post.user.name.charAt(0) : <UraIcon className="h-6 w-6" />}
+                        {post.user.avatar ? post.user.name.charAt(0) : <PostIcon className="h-6 w-6" />}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">

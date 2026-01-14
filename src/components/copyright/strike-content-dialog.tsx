@@ -12,7 +12,7 @@ import { CopyrightStrike } from '@/lib/types';
 import { Badge } from '../ui/badge';
 import { FileWarning } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { UraIcon } from '../ura-icon';
+import { PostIcon } from '../post-icon';
 import { formatDistanceToNow } from 'date-fns';
 
 interface StrikeContentDialogProps {
@@ -39,7 +39,7 @@ export function StrikeContentDialog({ isOpen, onOpenChange, strike }: StrikeCont
                 {/* Since the original user might be deleted, we can't rely on their data. 
                     Let's use a generic fallback. The claimant's name is what matters here. */}
                 <AvatarFallback>
-                    <UraIcon className="h-6 w-6" />
+                    <PostIcon className="h-6 w-6" />
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">

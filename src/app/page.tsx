@@ -12,14 +12,14 @@ import { LoginPage } from '@/components/login-page';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { UraIcon } from '@/components/ura-icon';
+import { PostIcon } from '@/components/post-icon';
 import { FilterDropdown, SortType } from '@/components/filter-dropdown';
 
 
 const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
     {
-    user: { id: 'user-1', name: 'URA Studio', avatar: `https://placehold.co/150x150/222/fff?text=U`, isMonetized: false, totalViews: 0, totalLikes: 0 },
-    content: 'Welcome to the new URA-X platform! This is the beginning of something amazing. We are building a community-focused social network.',
+    user: { id: 'user-1', name: 'POST Studio', avatar: `https://placehold.co/150x150/222/fff?text=P`, isMonetized: false, totalViews: 0, totalLikes: 0 },
+    content: 'Welcome to the new POST-X platform! This is the beginning of something amazing. We are building a community-focused social network.',
     image: 'https://picsum.photos/seed/1/800/600',
     imageHint: 'abstract tech',
     likes: {},
@@ -55,7 +55,7 @@ function LoadingScreen() {
                     <path className="x-line-1" d="M 30 30 L 70 70" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
                     <path className="x-line-2" d="M 70 30 L 30 70" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
                 </svg>
-                <h1 className="text-3xl font-bold text-primary animate-pulse">URA-X</h1>
+                <h1 className="text-3xl font-bold text-primary animate-pulse">POST-X</h1>
             </div>
         </div>
     )

@@ -8,7 +8,7 @@ import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import type { User } from './post-card';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './ura-icon';
 import { Progress } from './ui/progress';
 import { MediaPostDialog } from './media-post-dialog';
 
@@ -53,7 +53,7 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
             <Avatar>
               <AvatarImage src={currentUser.avatar} />
               <AvatarFallback>
-                  {currentUser.avatar ? currentUser.name.charAt(0) : <UraIcon className="h-6 w-6" />}
+                  {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-6 w-6" />}
               </AvatarFallback>
             </Avatar>
             <div className="w-full">

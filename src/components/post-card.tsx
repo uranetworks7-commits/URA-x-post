@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from './ui/separator';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './post-icon';
 import { Input } from './ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { ReportDialog } from './report-dialog';
@@ -268,7 +268,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           <Avatar>
             <AvatarImage src={post.user.avatar} alt={post.user.name} />
             <AvatarFallback>
-                {post.user.avatar ? post.user.name.charAt(0) : <UraIcon className="h-6 w-6" />}
+                {post.user.avatar ? post.user.name.charAt(0) : <PostIcon className="h-6 w-6" />}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
@@ -469,7 +469,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser.avatar} />
                       <AvatarFallback>
-                        {currentUser.avatar ? currentUser.name.charAt(0) : <UraIcon className="h-5 w-5" />}
+                        {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-5 w-5" />}
                       </AvatarFallback>
                     </Avatar>
                     <Input 

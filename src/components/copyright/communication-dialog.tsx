@@ -19,7 +19,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { UraIcon } from '../ura-icon';
+import { PostIcon } from '../post-icon';
 
 interface CommunicationDialogProps {
     isOpen: boolean;
@@ -124,7 +124,7 @@ export function CommunicationDialog({ isOpen, onOpenChange, currentUser, claimId
                                     {msg.senderId === currentUser.id && (
                                         <Avatar className="h-6 w-6">
                                             <AvatarImage src={currentUser.avatar} />
-                                            <AvatarFallback><UraIcon className="h-4 w-4" /></AvatarFallback>
+                                            <AvatarFallback><PostIcon className="h-4 w-4" /></AvatarFallback>
                                         </Avatar>
                                      )}
                                 </div>
@@ -154,4 +154,5 @@ export function CommunicationDialog({ isOpen, onOpenChange, currentUser, claimId
         </Dialog>
     );
 }
+
 

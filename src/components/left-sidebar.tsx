@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Users,
@@ -23,7 +24,7 @@ import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
 import type { User, Post } from './post-card';
-import { UraIcon } from './ura-icon';
+import { PostIcon } from './ura-icon';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 
@@ -80,7 +81,7 @@ export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts 
                 <Avatar>
                     <AvatarImage src={currentUser.avatar} />
                     <AvatarFallback>
-                      <UraIcon className="h-6 w-6" />
+                      <PostIcon className="h-6 w-6" />
                     </AvatarFallback>
                 </Avatar>
                 <span className="font-bold text-lg">{currentUser.name}</span>
@@ -149,7 +150,7 @@ export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts 
             </Button>
         </nav>
         <div className="p-4 mt-4 text-xs text-muted-foreground">
-          <p>Privacy · Terms · Advertising · Ad Choices · Cookies · More · URA Network © 2025</p>
+          <p>Privacy · Terms · Advertising · Ad Choices · Cookies · More · POST Network © 2025</p>
         </div>
       </ScrollArea>
     </aside>
