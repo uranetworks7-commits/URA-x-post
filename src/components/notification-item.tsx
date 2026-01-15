@@ -13,6 +13,7 @@ import { ref, onValue } from 'firebase/database';
 
 interface NotificationItemProps {
     notification: Notification;
+    currentUser: User;
 }
 
 const getIcon = (type: Notification['type']) => {
@@ -29,7 +30,7 @@ const getIcon = (type: Notification['type']) => {
     }
 };
 
-export function NotificationItem({ notification }: NotificationItemProps) {
+export function NotificationItem({ notification, currentUser }: NotificationItemProps) {
     const [relatedUser, setRelatedUser] = useState<User | null>(null);
 
     useEffect(() => {
@@ -45,17 +46,39 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         }
     }, [notification.relatedUserId]);
 
+    const renderMessage = () => {
+        if (relatedUser && notification.message.includes(relatedUser.name)) {
+            const parts = notification.message.split(relatedUser.name);
+            return (
+                <p className="text-sm">
+                    {parts[0]}
+                    <Link 
+                        href={`/profile/${relatedUser.id}`} 
+                        className="font-bold hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {relatedUser.name}
+                    </Link>
+                    {parts[1]}
+                </p>
+            );
+        }
+        return <p className="text-sm" dangerouslySetInnerHTML={{ __html: notification.message }} />;
+    };
+
     const content = (
         <div className={cn(
             "flex items-start gap-3 p-2 rounded-lg hover:bg-secondary",
             !notification.isRead && "bg-secondary"
         )}>
             <div className="flex-shrink-0">
-                {relatedUser ? (
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={relatedUser.avatar} />
-                        <AvatarFallback>{relatedUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                 {relatedUser ? (
+                    <Link href={`/profile/${relatedUser.id}`} onClick={(e) => e.stopPropagation()}>
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={relatedUser.avatar} />
+                            <AvatarFallback>{relatedUser.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </Link>
                 ) : (
                     <div className="h-8 w-8 flex items-center justify-center bg-muted rounded-full">
                         {getIcon(notification.type)}
@@ -63,7 +86,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                 )}
             </div>
             <div>
-                <p className="text-sm" dangerouslySetInnerHTML={{ __html: notification.message }} />
+                {renderMessage()}
                 <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
                 </p>
@@ -79,5 +102,5 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         );
     }
 
-    return content;
+    return <div className="cursor-pointer">{content}</div>;
 }

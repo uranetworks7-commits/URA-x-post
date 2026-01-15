@@ -130,16 +130,18 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts, them
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
                     <div className="flex items-center gap-2">
-                      <Avatar>
-                          <AvatarImage src={currentUser.avatar} />
-                          <AvatarFallback>
-                            {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-6 w-6" />}
-                          </AvatarFallback>
-                      </Avatar>
-                      <div>
-                          <p className="font-bold">{currentUser.name}</p>
-                          <p className="text-xs text-muted-foreground">View your profile</p>
-                      </div>
+                      <Link href={`/profile/${currentUser.id}`} className="flex items-center gap-2">
+                          <Avatar>
+                              <AvatarImage src={currentUser.avatar} />
+                              <AvatarFallback>
+                                {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-6 w-6" />}
+                              </AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="font-bold">{currentUser.name}</p>
+                              <p className="text-xs text-muted-foreground">View your profile</p>
+                          </div>
+                      </Link>
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

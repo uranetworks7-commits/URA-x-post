@@ -1,20 +1,23 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem } from './ui/dropdown-menu';
 import { ScrollArea } from './ui/scroll-area';
 import { User, Notification } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { NotificationItem } from './notification-item';
+import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 
 interface NotificationBellProps {
     currentUser: User;
 }
 
 export function NotificationBell({ currentUser }: NotificationBellProps) {
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+
     const notifications = useMemo(() => {
         if (!currentUser.notifications) return [];
         return Object.values(currentUser.notifications).sort((a, b) => b.timestamp - a.timestamp);
@@ -36,37 +39,61 @@ export function NotificationBell({ currentUser }: NotificationBellProps) {
             }
         }
     };
+    
+    const handleClearAll = () => {
+        const updates: { [key: string]: any } = {};
+        updates[`/users/${currentUser.id}/notifications`] = null;
+        update(ref(db), updates);
+        setIsClearConfirmOpen(false);
+    };
 
     return (
-        <DropdownMenu onOpenChange={handleOpenChange}>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted">
-                    <Bell className="h-5 w-5" />
-                    {hasUnread && (
-                        <span className="absolute top-1 right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <ScrollArea className="h-96">
-                    <div className="p-2 space-y-1">
-                        {notifications.length > 0 ? (
-                            notifications.map(notification => (
-                                <NotificationItem key={notification.id} notification={notification} />
-                            ))
-                        ) : (
-                            <div className="text-center text-sm text-muted-foreground py-4">
-                                You have no notifications.
-                            </div>
+        <>
+            <DropdownMenu onOpenChange={handleOpenChange}>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted">
+                        <Bell className="h-5 w-5" />
+                        {hasUnread && (
+                            <span className="absolute top-1 right-1 flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
                         )}
-                    </div>
-                </ScrollArea>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <ScrollArea className="h-96">
+                        <div className="p-2 space-y-1">
+                            {notifications.length > 0 ? (
+                                notifications.map(notification => (
+                                    <NotificationItem key={notification.id} notification={notification} currentUser={currentUser} />
+                                ))
+                            ) : (
+                                <div className="text-center text-sm text-muted-foreground py-4">
+                                    You have no notifications.
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                    {notifications.length > 0 && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => setIsClearConfirmOpen(true)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Clear All Notifications
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <DeletePostConfirmDialog
+                isOpen={isClearConfirmOpen}
+                onOpenChange={setIsClearConfirmOpen}
+                onConfirm={handleClearAll}
+                title="Are you sure you want to clear all notifications?"
+            />
+        </>
     );
 }
