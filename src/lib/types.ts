@@ -3,6 +3,7 @@
 
 
 
+
 export interface Withdrawal {
   username: string;
   amount: number;
@@ -70,6 +71,8 @@ export interface User {
   isLocked?: boolean;
   accountStatus?: 'active' | 'terminated';
   terminationReason?: string;
+  followers?: { [key: string]: boolean };
+  following?: { [key: string]: boolean };
 }
 export interface Comment {
     id: string;

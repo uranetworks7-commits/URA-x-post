@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -26,6 +26,7 @@ import { DeletePostDialog } from './delete-post-dialog';
 import type { Post, User, Comment } from '@/lib/types';
 import { Badge } from './ui/badge';
 import { PostIdDialog } from './post-id-dialog';
+import Link from 'next/link';
 
 const parseCount = (count: number | undefined): number => {
     if (typeof count === 'number') return count;
@@ -73,7 +74,7 @@ function CommentOptionsMenu({ comment, post, currentUser, onDelete }: { comment:
 }
 
 
-export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, playingVideoId, onPlayVideo }: any) {
+export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo }: any) {
   // If post or post.user is missing, don't render the card.
   if (!post || !post.user) {
     return null;
@@ -84,6 +85,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPostIdDialogOpen, setIsPostIdDialogOpen] = useState(false);
+  const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
+
   const { toast } = useToast();
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -178,9 +181,25 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   
   const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
   const isLiked = useMemo(() => currentUser && post.likes && post.likes[currentUser.id], [currentUser, post.likes]);
+  const isFollowing = useMemo(() => currentUser && currentUser.following && currentUser.following[post.user.id], [currentUser, post.user.id]);
+
 
   const handleLike = () => {
     onLikePost(post.id);
+  };
+
+  const handleFollowClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    if (isFollowing) {
+        setIsUnfollowDialogOpen(true);
+    } else {
+        onFollowUser(post.user.id);
+    }
+  };
+
+  const confirmUnfollow = () => {
+    onFollowUser(post.user.id);
+    setIsUnfollowDialogOpen(false);
   };
   
   const handleToggleComments = () => {
@@ -265,16 +284,28 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     <Card className={cn(post.isCopyrighted && "border-destructive/50")}>
       <CardHeader className="p-4">
         <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={post.user.avatar} alt={post.user.name} />
-            <AvatarFallback>
-                {post.user.avatar ? post.user.name.charAt(0) : <PostIcon className="h-6 w-6" />}
-            </AvatarFallback>
-          </Avatar>
+          <Link href={`/profile/${post.user.id}`}>
+            <Avatar>
+              <AvatarImage src={post.user.avatar} alt={post.user.name} />
+              <AvatarFallback>
+                  {post.user.avatar ? post.user.name.charAt(0) : <PostIcon className="h-6 w-6" />}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
           <div className="flex-1">
-            <div className="flex items-center gap-1">
-              <p className="font-bold text-foreground">{post.user.name}</p>
+            <div className="flex items-center gap-2">
+              <Link href={`/profile/${post.user.id}`} className="font-bold text-foreground hover:underline">{post.user.name}</Link>
               {post.user.isMonetized && <BadgeCheck className="h-5 w-5 text-blue-500" />}
+              {!isPublisher && (
+                  <Button 
+                    variant={isFollowing ? 'outline' : 'default'} 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={handleFollowClick}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground">{timeAgo}</p>
@@ -499,8 +530,11 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         onOpenChange={setIsPostIdDialogOpen}
         postId={post.id}
       />
+      <DeletePostDialog
+        isOpen={isUnfollowDialogOpen}
+        onOpenChange={setIsUnfollowDialogOpen}
+        onConfirm={confirmUnfollow}
+      />
     </>
   );
 }
-
-    

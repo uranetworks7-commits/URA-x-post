@@ -430,6 +430,25 @@ function HomePageContent() {
     }
   };
 
+  const handleFollowUser = (userIdToFollow: string) => {
+    if (!currentUser) return;
+    const currentUserId = currentUser.id;
+
+    const updates: { [key: string]: any } = {};
+    const isCurrentlyFollowing = currentUser.following && currentUser.following[userIdToFollow];
+
+    if (isCurrentlyFollowing) {
+        // Unfollow
+        updates[`/users/${currentUserId}/following/${userIdToFollow}`] = null;
+        updates[`/users/${userIdToFollow}/followers/${currentUserId}`] = null;
+    } else {
+        // Follow
+        updates[`/users/${currentUserId}/following/${userIdToFollow}`] = true;
+        updates[`/users/${userIdToFollow}/followers/${currentUserId}`] = true;
+    }
+    update(ref(db), updates);
+};
+
   const handleAddComment = (postId: string, commentText: string) => {
     if (!currentUser) return;
     const commentsRef = ref(db, `posts/${postId}/comments`);
@@ -646,6 +665,7 @@ function HomePageContent() {
                     onDeleteComment={handleDeleteComment}
                     onReportPost={handleReportPost}
                     onViewPost={handleViewPost}
+                    onFollowUser={handleFollowUser}
                     playingVideoId={playingVideoId}
                     onPlayVideo={setPlayingVideoId}
                 />
@@ -664,8 +684,3 @@ export default function HomePage() {
       <HomePageContent />
   );
 }
-
-
-    
-
-    
