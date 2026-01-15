@@ -213,14 +213,14 @@ export default function MessagesPage({ params }: { params: { chatId: string } })
                             <ScrollArea className="h-full" ref={scrollAreaRef as any}>
                                 <div className="space-y-4">
                                     {visibleMessages.map(message => (
-                                        <div key={message.id} className={cn("flex items-end gap-2 group", message.senderId === currentUser.id ? "justify-end" : "justify-start")}>
+                                        <div key={message.id} className={cn("flex items-end gap-2", message.senderId === currentUser.id ? "justify-end" : "justify-start")}>
                                             {message.senderId !== currentUser.id && (
                                                 <Avatar className="h-6 w-6">
                                                     <AvatarImage src={otherUser.avatar} />
                                                     <AvatarFallback>{otherUser.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                             )}
-                                             <div className={cn("flex items-center gap-1", message.senderId === currentUser.id ? "flex-row-reverse" : "flex-row")}>
+                                             <div className={cn("group flex items-center gap-1", message.senderId === currentUser.id ? "flex-row-reverse" : "flex-row")}>
                                                 <div className={cn("max-w-xs p-3 rounded-lg text-sm", message.senderId === currentUser.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
                                                     <p>{message.text}</p>
                                                     <p className={cn("text-xs mt-1", message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground")}>

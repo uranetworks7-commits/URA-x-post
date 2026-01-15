@@ -130,7 +130,6 @@ export default function FriendsPage() {
                                         </Avatar>
                                         <div>
                                             <p className="font-bold text-sm">{user.name}</p>
-                                            <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
                                         </div>
                                     </div>
                                 </Link>
