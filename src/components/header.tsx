@@ -5,8 +5,6 @@
 import { Search, Home, Users, Clapperboard, Store, Menu, LogOut, Settings, PenSquare, BarChart, ThumbsUp, MessageSquare, ShieldCheck, Copyright } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from './ui/sheet';
-import { LeftSidebar } from './left-sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
@@ -32,18 +30,12 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts, them
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between h-14 px-4 bg-card border-b border-border shadow-sm">
       <div className="flex items-center gap-2">
-        <Sheet>
-          <SheetTrigger asChild>
+        <Link href="/menu">
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle Menu</span>
             </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64 bg-card">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            {currentUser && <LeftSidebar currentUser={currentUser} onLogout={onLogout} onUpdateProfile={onUpdateProfile} userPosts={userPosts} theme={theme} setTheme={setTheme}/>}
-          </SheetContent>
-        </Sheet>
+        </Link>
         <div className="flex items-center gap-2">
            <PostIcon className="h-8 w-8" />
           <h1 className="text-xl font-bold text-primary hidden sm:block">POST-X</h1>

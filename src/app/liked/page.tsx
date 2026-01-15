@@ -1,10 +1,10 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from "firebase/database";
 import type { Post, User } from '@/components/post-card';
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PostCard } from '@/components/post-card';
@@ -90,12 +90,6 @@ export default function LikedPostsPage() {
         userPosts={userPosts}
       />
       <div className="flex flex-1 overflow-hidden">
-        <LeftSidebar 
-          currentUser={currentUser} 
-          onLogout={handleLogout}
-          onUpdateProfile={handleUpdateProfile}
-          userPosts={userPosts}
-        />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
           <Card>
             <CardHeader className="p-4">
@@ -141,3 +135,5 @@ export default function LikedPostsPage() {
     </div>
   );
 }
+
+    

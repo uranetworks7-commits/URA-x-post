@@ -5,7 +5,6 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, update, push, set } from "firebase/database";
 import { User, Withdrawal } from '@/lib/types';
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -309,16 +308,6 @@ export default function PanAdsPage() {
                 userPosts={[]}
             />
             <div className="flex flex-1 overflow-hidden">
-                <LeftSidebar 
-                    currentUser={currentUser} 
-                    onLogout={() => {
-                        localStorage.removeItem('currentUser');
-                        localStorage.removeItem('pan_ads_auth');
-                        router.push('/');
-                    }}
-                    onUpdateProfile={() => {}}
-                    userPosts={[]}
-                />
                 <main className="flex-1 overflow-y-auto p-4 space-y-4">
                      <CreateUserForm onAccountCreated={() => setUserFetchKey(k => k + 1)} />
                      <Card>
@@ -390,3 +379,5 @@ export default function PanAdsPage() {
         </div>
     );
 }
+
+    

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue, update } from "firebase/database";
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,15 +81,6 @@ export default function CopyrightPage() {
                     userPosts={[]}
                 />
                 <div className="flex flex-1 overflow-hidden">
-                    <LeftSidebar 
-                        currentUser={currentUser} 
-                        onLogout={() => {
-                            localStorage.removeItem('currentUser');
-                            router.push('/');
-                        }}
-                        onUpdateProfile={() => {}}
-                        userPosts={[]}
-                    />
                     <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
                         {activeStrikes.length > 0 && <CopyrightStrikeAlert strikes={activeStrikes} />}
                         <Card>
@@ -153,3 +143,5 @@ export default function CopyrightPage() {
         </>
     );
 }
+
+    

@@ -5,7 +5,6 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, update } from "firebase/database";
 import type { Post, User, Withdrawal } from '@/components/post-card';
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -176,15 +175,6 @@ export default function AnalyticsPage() {
         userPosts={userPosts}
       />
       <div className="flex flex-1 overflow-hidden">
-        <LeftSidebar 
-            currentUser={currentUser} 
-            onLogout={() => {
-                localStorage.removeItem('currentUser');
-                router.push('/');
-            }}
-            onUpdateProfile={() => {}} // Not needed on this page
-            userPosts={userPosts}
-        />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
             <Card>
                 <CardHeader className="p-4">
@@ -441,6 +431,8 @@ export default function AnalyticsPage() {
     </>
   );
 }
+
+    
 
     
 

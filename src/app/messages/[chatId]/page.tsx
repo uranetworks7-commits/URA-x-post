@@ -7,7 +7,6 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, off, push, set, update } from "firebase/database";
 import type { User, Message } from '@/lib/types';
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -183,15 +182,6 @@ export default function MessagesPage({ params }: { params: { chatId: string } })
                 userPosts={[]}
             />
             <div className="flex flex-1 overflow-hidden">
-                <LeftSidebar
-                    currentUser={currentUser}
-                    onLogout={() => {
-                        localStorage.removeItem('currentUser');
-                        router.push('/');
-                    }}
-                    onUpdateProfile={() => {}}
-                    userPosts={[]}
-                />
                 <main className="flex-1 flex flex-col p-0">
                     <Card className="flex-1 flex flex-col rounded-none border-0 md:border">
                         <CardHeader className="p-3 border-b flex-row items-center gap-3">
@@ -261,3 +251,5 @@ export default function MessagesPage({ params }: { params: { chatId: string } })
         </div>
     );
 }
+
+    

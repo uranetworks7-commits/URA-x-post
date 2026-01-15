@@ -5,7 +5,6 @@ import { db } from '@/lib/firebase';
 import { ref, onValue } from "firebase/database";
 import type { User } from '@/lib/types';
 import { Header } from '@/components/header';
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -85,12 +84,6 @@ export default function FriendsPage() {
           userPosts={[]}
         />
         <div className="flex flex-1 overflow-hidden">
-          <LeftSidebar 
-            currentUser={currentUser} 
-            onLogout={() => { localStorage.removeItem('currentUser'); router.push('/'); }}
-            onUpdateProfile={() => {}}
-            userPosts={[]}
-          />
           <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
             <Card>
               <CardHeader className="p-4">
@@ -176,3 +169,5 @@ export default function FriendsPage() {
     </>
   );
 }
+
+    
