@@ -49,6 +49,30 @@ const formatCount = (count: number): string => {
     return count.toString();
 };
 
+// --- Add this new helper function here ---
+const ALLOWED_IMAGE_HOSTS = [
+  'placehold.co',
+  'images.unsplash.com',
+  'picsum.photos',
+  'files.catbox.moe',
+  'i.postimg.cc',
+  'i.iib.co',
+  'i.pravatar.cc',
+  '9000-firebase-studio-1758432645286.cluster-c36dgv2kibakqwbbbsgmia3fny.cloudworkstations.dev'
+];
+
+const isImageHostAllowed = (imageUrl?: string): boolean => {
+  if (!imageUrl) return false;
+  try {
+    const url = new URL(imageUrl);
+    return ALLOWED_IMAGE_HOSTS.includes(url.hostname);
+  } catch (error) {
+    return false;
+  }
+};
+// -----------------------------------------
+
+
 export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo }: any) {
   // If post or post.user is missing, don't render the card.
   if (!post || !post.user) {
@@ -273,6 +297,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     setIsPostIdDialogOpen(true);
   };
 
+  const canShowImage = isImageHostAllowed(post.image) && !imageError;
+
   return (
     <>
     <Card className={cn(post.isCopyrighted && "border-destructive/50")}>
@@ -391,7 +417,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       </CardContent>
       {post.image && (
         <div className="relative w-full aspect-video bg-card cursor-pointer" onClick={() => onViewPost(post.id)}>
-          {!imageError ? (
+          {canShowImage ? (
             <Image 
               src={post.image} 
               alt="Post image" 
@@ -505,4 +531,5 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     </>
   );
 }
+
 
