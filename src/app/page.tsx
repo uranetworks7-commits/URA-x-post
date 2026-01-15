@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue, set, push, remove, update, query, orderByChild, equalTo, get } from "firebase/database";
-import { LeftSidebar } from '@/components/left-sidebar';
 import { RightSidebar } from '@/components/right-sidebar';
 import { PostCard, Post, User, Comment } from '@/components/post-card';
 import { CreatePost } from '@/components/create-post';
@@ -702,16 +701,6 @@ function HomePageContent() {
         setTheme={setTheme}
       />
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden md:block w-80 bg-card border-r border-border">
-            <LeftSidebar 
-                currentUser={currentUser} 
-                onLogout={handleLogout}
-                onUpdateProfile={handleUpdateProfile}
-                userPosts={userPosts}
-                theme={theme}
-                setTheme={setTheme}
-            />
-        </aside>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
             <CreatePost 
                 onCreatePost={handleCreatePost} 
