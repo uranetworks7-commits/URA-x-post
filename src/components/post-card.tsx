@@ -291,7 +291,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     <Card className={cn(post.isCopyrighted && "border-destructive/50")}>
       <CardHeader className="p-4">
         <div className="flex items-center gap-3">
-          <Link href={`/profile/${post.user.id}`}>
+          <Link href={`/profile/${encodeURIComponent(post.user.id)}`}>
             <Avatar>
               <AvatarImage src={post.user.avatar} alt={post.user.name} />
               <AvatarFallback>
@@ -301,7 +301,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           </Link>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <Link href={`/profile/${post.user.id}`} className="font-bold text-sm text-foreground hover:underline">{post.user.name}</Link>
+              <Link href={`/profile/${encodeURIComponent(post.user.id)}`} className="font-bold text-sm text-foreground hover:underline">{post.user.name}</Link>
               {post.user.isMonetized && <BadgeCheck className="h-5 w-5 text-blue-500" />}
               {!isPublisher && (
                   <Button 

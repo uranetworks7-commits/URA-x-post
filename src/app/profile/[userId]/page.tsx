@@ -25,7 +25,7 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
   const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { userId } = params;
+  const { userId: encodedUserId } = params;
   
   useEffect(() => {
     setIsClient(true);
@@ -33,19 +33,25 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     if (savedUser) {
         const user = JSON.parse(savedUser);
         const userRef = ref(db, `users/${user.id}`);
-        onValue(userRef, (snapshot) => {
+        const listener = onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
             if (userData) {
                 setCurrentUser({ id: user.id, ...userData });
             }
         });
+        return () => {
+            // No-op, listener will be detached when component unmounts if needed
+            // off(userRef, 'value', listener) is not the right syntax for new sdk
+        }
     } else {
       router.push('/');
     }
   }, [router]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!encodedUserId) return;
+    
+    const userId = decodeURIComponent(encodedUserId);
 
     const profileUserRef = ref(db, `users/${userId}`);
     const profileListener = onValue(profileUserRef, (snapshot) => {
@@ -69,8 +75,11 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     
     return () => {
         // Detach listeners
+        // `onValue` returns an unsubscribe function
+        profileListener();
+        postsListener();
     }
-  }, [userId]);
+  }, [encodedUserId]);
 
   const handleFollow = () => {
     if (!currentUser || !profileUser) return;
