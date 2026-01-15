@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -66,11 +67,20 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const { toast } = useToast();
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const viewCountedRef = useRef(false);
   const [showControls, setShowControls] = useState(false);
 
   const charLimit = 800;
   const isLongPost = post.content.length > charLimit;
   const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (video && video.currentTime > 3 && !viewCountedRef.current) {
+        onViewPost(post.id);
+        viewCountedRef.current = true; // Mark as counted for this session
+    }
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -86,6 +96,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         } else {
             video.pause();
             video.currentTime = 0;
+            viewCountedRef.current = false; // Reset when out of view
             setShowControls(false); // Hide controls when video scrolls out
         }
       },
@@ -95,11 +106,15 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     );
 
     observer.observe(video);
+    video.addEventListener('timeupdate', handleTimeUpdate);
 
     return () => {
       observer.disconnect();
+      if (video) {
+        video.removeEventListener('timeupdate', handleTimeUpdate);
+      }
     };
-  }, [post.id, onPlayVideo]);
+  }, [post.id, onPlayVideo, onViewPost]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -490,3 +505,5 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     </>
   );
 }
+
+    
