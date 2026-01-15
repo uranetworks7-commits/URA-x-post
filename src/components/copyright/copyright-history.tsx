@@ -60,6 +60,7 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
     const { toast } = useToast();
     const [isRetractDialogOpen, setIsRetractDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [dialogContent, setDialogContent] = useState({ title: '', onConfirm: () => {} });
     const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
     const [selectedStrike, setSelectedStrike] = useState<CopyrightStrike | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -85,10 +86,24 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
         setIsContentDialogOpen(true);
     };
     
-    const handleDeleteClick = (strike: CopyrightStrike) => {
+    const handleDeleteStrikeClick = (strike: CopyrightStrike) => {
         setSelectedStrike(strike);
+        setDialogContent({
+            title: "Are you sure you want to delete this strike from your history?",
+            onConfirm: handleConfirmDeleteStrike,
+        });
         setIsDeleteDialogOpen(true);
     };
+
+    const handleDeleteClaimClick = (claim: CopyrightClaim) => {
+        setSelectedClaim(claim);
+        setDialogContent({
+            title: "Are you sure you want to delete this claim from your history?",
+            onConfirm: handleConfirmDeleteClaim,
+        });
+        setIsDeleteDialogOpen(true);
+    };
+
 
     const handleConfirmRetract = async () => {
         if (!selectedClaim) return;
@@ -115,7 +130,7 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
         }
     }
     
-    const handleConfirmDelete = async () => {
+    const handleConfirmDeleteStrike = async () => {
         if (!selectedStrike) return;
         setIsProcessing(true);
 
@@ -134,6 +149,27 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
             setSelectedStrike(null);
         }
     };
+    
+    const handleConfirmDeleteClaim = async () => {
+        if (!selectedClaim) return;
+        setIsProcessing(true);
+
+        try {
+            const updates: { [key: string]: any } = {};
+            updates[`/users/${currentUser.id}/submittedClaims/${selectedClaim.id}`] = null;
+            
+            await update(ref(db), updates);
+            toast({ title: "Claim Deleted", description: "The claim has been removed from your history." });
+
+        } catch (error) {
+             toast({ title: "Error", description: "Failed to delete the claim.", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
+            setIsDeleteDialogOpen(false);
+            setSelectedClaim(null);
+        }
+    };
+
 
     return (
         <>
@@ -178,7 +214,7 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
                                             <Button variant="outline" size="sm" onClick={() => handleViewContentClick(strike)}><FileSearch className="h-4 w-4 mr-2" /> View</Button>
                                             <Button variant="outline" size="sm" onClick={() => handleContactClick({ id: strike.strikeId } as CopyrightClaim)}><MessageSquare className="h-4 w-4 mr-2" /> Contact</Button>
                                              {(strike.status === 'expired' || strike.status === 'retracted') && (
-                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(strike)}>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteStrikeClick(strike)}>
                                                     <Trash2 className="h-4 w-4 mr-2" /> Delete
                                                 </Button>
                                             )}
@@ -215,6 +251,11 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
                                             {claim.status === 'approved' && (
                                                 <Button variant="destructive" size="sm" onClick={() => handleRetractClick(claim)}><Undo2 className="h-4 w-4 mr-2" /> Retract</Button>
                                             )}
+                                            {(claim.status === 'rejected' || claim.status === 'retracted') && (
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteClaimClick(claim)}>
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )) : (
@@ -247,8 +288,8 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
         <DeletePostConfirmDialog
             isOpen={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            onConfirm={handleConfirmDelete}
-            title="Are you sure you want to delete this strike from your history?"
+            onConfirm={dialogContent.onConfirm}
+            title={dialogContent.title}
         />
         {selectedClaim && (
             <CommunicationDialog
