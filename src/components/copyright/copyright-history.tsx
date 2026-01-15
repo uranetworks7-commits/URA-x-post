@@ -93,11 +93,11 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
             updates[`/copyrightClaims/${selectedClaim.id}/status`] = 'retracted';
             updates[`/users/${currentUser.id}/submittedClaims/${selectedClaim.id}/status`] = 'retracted';
             
-            // Remove the strike from the accused user
-            updates[`/users/${selectedClaim.accusedUserId}/copyrightStrikes/${selectedClaim.id}`] = null;
+            // Mark the strike as retracted instead of removing it
+            updates[`/users/${selectedClaim.accusedUserId}/copyrightStrikes/${selectedClaim.id}/status`] = 'retracted';
 
             await update(ref(db), updates);
-            toast({ title: "Claim Retracted", description: "The copyright strike has been successfully removed." });
+            toast({ title: "Claim Retracted", description: "The copyright strike has been successfully updated to 'retracted'." });
 
         } catch (error) {
             toast({ title: "Error", description: "Failed to retract the claim.", variant: "destructive" });
