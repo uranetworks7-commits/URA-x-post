@@ -21,6 +21,7 @@ import { AlertCircle, Upload, Loader2, Link2 } from 'lucide-react';
 import { uploadFile } from '@/lib/file-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 interface MediaPostDialogProps {
     isOpen: boolean;
@@ -49,7 +50,6 @@ export function MediaPostDialog({
     
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -61,6 +61,7 @@ export function MediaPostDialog({
   });
   
   const contentValue = form.watch('content');
+  const mediaUrlValue = form.watch('mediaUrl');
 
   useEffect(() => {
     form.setValue('content', initialContent);
@@ -69,7 +70,6 @@ export function MediaPostDialog({
   useEffect(() => {
     if (!isOpen) {
       form.reset({ content: initialContent, mediaUrl: '' });
-      setUploadMode('file');
     }
   }, [isOpen, form, initialContent]);
 
@@ -116,19 +116,13 @@ export function MediaPostDialog({
     onOpenChange(false);
   }
 
-  const toggleUploadMode = () => {
-    setUploadMode(prev => prev === 'file' ? 'url' : 'file');
-    form.setValue('mediaUrl', '');
-    form.clearErrors('mediaUrl');
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create {mediaType === 'image' ? 'Image' : 'Video'} Post</DialogTitle>
           <DialogDescription>
-            {uploadMode === 'file' ? `Upload a file from your device. Max size: 4.5 MB.` : 'Paste a direct URL to your media.'}
+            Upload a file from your device or paste a direct URL to your media.
           </DialogDescription>
         </DialogHeader>
 
@@ -159,66 +153,60 @@ export function MediaPostDialog({
                             </FormItem>
                         )}
                     />
-                     <FormField
-                        control={form.control}
-                        name="mediaUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex justify-between items-center">
-                                    <FormLabel>Your {mediaType}</FormLabel>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={toggleUploadMode}
-                                      title={uploadMode === 'file' ? 'Switch to URL input' : 'Switch to file upload'}
-                                    >
-                                      <Link2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <FormControl>
-                                  <div className="space-y-2">
-                                    {uploadMode === 'file' && (
-                                      <Button 
-                                          type="button" 
-                                          variant="outline"
-                                          size="lg"
-                                          className="w-full"
-                                          onClick={() => fileInputRef.current?.click()}
-                                          disabled={isUploading}
-                                      >
-                                          {isUploading ? (
-                                              <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                          ) : (
-                                              <Upload className="mr-2 h-4 w-4" />
-                                          )}
-                                          {isUploading ? 'Uploading...' : `Upload ${mediaType}`}
-                                      </Button>
-                                    )}
-                                    <input
-                                      type="file"
-                                      ref={fileInputRef}
-                                      onChange={handleFileChange}
-                                      className="hidden"
-                                      accept={mediaType === 'image' ? 'image/*' : 'video/*'}
-                                    />
-                                    <Input
-                                        placeholder={uploadMode === 'file' ? `Your ${mediaType} URL will appear here` : `https://example.com/image.png`}
-                                        {...field}
-                                        readOnly={uploadMode === 'file'}
-                                        className={cn(uploadMode === 'file' && 'cursor-default focus-visible:ring-0 focus-visible:ring-offset-0')}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                     <div className='space-y-4'>
+                        <div>
+                            <FormLabel>From Your Device</FormLabel>
+                            <Button 
+                                type="button" 
+                                variant="outline"
+                                size="lg"
+                                className="w-full mt-2"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading || !!mediaUrlValue}
+                            >
+                                {isUploading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                ) : (
+                                    <Upload className="mr-2 h-4 w-4" />
+                                )}
+                                {isUploading ? 'Uploading...' : `Upload ${mediaType}`}
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                accept={mediaType === 'image' ? 'image/*' : 'video/*'}
+                                disabled={isUploading || !!mediaUrlValue}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <Separator className="flex-1" />
+                           <span className="text-xs text-muted-foreground">OR</span>
+                           <Separator className="flex-1" />
+                        </div>
+                         <FormField
+                            control={form.control}
+                            name="mediaUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>From a URL</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder={`https://example.com/${mediaType}.png`}
+                                            {...field}
+                                            disabled={isUploading}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
                         <Button type="submit" disabled={!form.formState.isValid || isUploading}>
-                            {isUploading ? 'Uploading...' : 'Post'}
+                            {isUploading ? 'Please wait...' : 'Post'}
                         </Button>
                     </DialogFooter>
                 </form>
