@@ -23,11 +23,14 @@ import { ReportDialog } from './report-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { DeletePostDialog } from './delete-post-dialog';
-import type { Post, User, Comment } from '@/lib/types';
+import type { Post, User, Comment, Notification } from '@/lib/types';
 import { Badge } from './ui/badge';
 import { PostIdDialog } from './post-id-dialog';
 import Link from 'next/link';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
+import { db } from '@/lib/firebase';
+import { ref, update, push } from 'firebase/database';
+
 
 const parseCount = (count: number | undefined): number => {
     if (typeof count === 'number') return count;
@@ -200,12 +203,12 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     if (isFollowing) {
         setIsUnfollowDialogOpen(true);
     } else {
-        onFollowUser(post.user.id);
+        onFollowUser(post.user.id, post.user.name);
     }
   };
 
   const confirmUnfollow = () => {
-    onFollowUser(post.user.id);
+    onFollowUser(post.user.id, post.user.name);
     setIsUnfollowDialogOpen(false);
   };
   

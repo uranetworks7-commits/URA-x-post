@@ -1,9 +1,15 @@
 
-
-
-
-
-
+export interface Notification {
+  id: string;
+  type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE';
+  message: string;
+  link?: string;
+  timestamp: number;
+  isRead: boolean;
+  relatedUserId?: string; // The user who initiated the action (e.g., liked, followed)
+  relatedPostId?: string;
+  relatedPostContent?: string;
+}
 
 export interface Withdrawal {
   username: string;
@@ -74,6 +80,7 @@ export interface User {
   terminationReason?: string;
   followers?: { [key: string]: boolean };
   following?: { [key: string]: boolean };
+  notifications?: { [key: string]: Notification };
 }
 export interface Comment {
     id: string;

@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { PostIcon } from '@/components/post-icon';
 import { FilterDropdown, SortType } from '@/components/filter-dropdown';
+import { Notification } from '@/lib/types';
 
 
 const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
@@ -175,10 +176,23 @@ function HomePageContent() {
         if (activeStrikes.length >= 3) {
             // With 3 strikes, they don't expire. No action needed here.
         } else if (currentUser.copyrightStrikes) {
-            Object.values(currentUser.copyrightStrikes).forEach(strike => {
+            Object.entries(currentUser.copyrightStrikes).forEach(([key, strike]) => {
                 if (strike.status === 'active' && now > strike.expiresAt) {
-                    updates[`copyrightStrikes/${strike.strikeId}/status`] = 'expired';
+                    const newStatus = 'expired';
+                    updates[`copyrightStrikes/${strike.strikeId}/status`] = newStatus;
                     hasChanges = true;
+
+                    // Create notification for expired strike
+                    const notifRef = push(ref(db, `users/${currentUser.id}/notifications`));
+                    const newNotification: Notification = {
+                        id: notifRef.key!,
+                        type: 'COPYRIGHT_STRIKE_UPDATE',
+                        message: `A copyright strike from ${strike.claimantName} has expired.`,
+                        link: '/copyright',
+                        timestamp: Date.now(),
+                        isRead: false,
+                    };
+                    updates[`notifications/${notifRef.key}`] = newNotification;
                 }
             });
         }
@@ -406,10 +420,26 @@ function HomePageContent() {
     } else {
       // Like
       set(postRef, true);
+      // Create notification for post author (if not the current user)
+      if (post && post.user.id !== currentUser.id) {
+          const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
+          const newNotification: Notification = {
+              id: notifRef.key!,
+              type: 'POST_LIKE',
+              message: `${currentUser.name} liked your post.`,
+              link: `/post/${post.id}`, // Assuming a post detail page might exist
+              timestamp: Date.now(),
+              isRead: false,
+              relatedUserId: currentUser.id,
+              relatedPostId: post.id,
+              relatedPostContent: post.content.substring(0, 50) + (post.content.length > 50 ? '...' : ''),
+          };
+          update(ref(db), { [`/users/${post.user.id}/notifications/${notifRef.key}`]: newNotification });
+      }
     }
   };
 
-  const handleFollowUser = (userIdToFollow: string) => {
+  const handleFollowUser = (userIdToFollow: string, userNameToFollow: string) => {
     if (!currentUser) return;
     const currentUserId = currentUser.id;
 
@@ -424,6 +454,19 @@ function HomePageContent() {
         // Follow
         updates[`/users/${currentUserId}/following/${userIdToFollow}`] = true;
         updates[`/users/${userIdToFollow}/followers/${currentUserId}`] = true;
+
+        // Create notification for the user being followed
+        const notifRef = push(ref(db, `users/${userIdToFollow}/notifications`));
+        const newNotification: Notification = {
+            id: notifRef.key!,
+            type: 'NEW_FOLLOWER',
+            message: `${currentUser.name} started following you.`,
+            link: `/profile/${encodeURIComponent(currentUser.id)}`,
+            timestamp: Date.now(),
+            isRead: false,
+            relatedUserId: currentUser.id,
+        };
+        updates[`/users/${userIdToFollow}/notifications/${notifRef.key}`] = newNotification;
     }
     update(ref(db), updates);
 };

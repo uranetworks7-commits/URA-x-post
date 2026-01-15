@@ -13,6 +13,7 @@ import type { User, Post } from './post-card';
 import { useState } from 'react';
 import { PostIcon } from './post-icon';
 import Link from 'next/link';
+import { NotificationBell } from './notification-bell';
 
 interface HeaderProps {
   currentUser: User | null;
@@ -59,6 +60,7 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
         </Button>
       </nav>
       <div className="flex items-center gap-2">
+        {currentUser && <NotificationBell currentUser={currentUser} />}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full bg-secondary hover:bg-muted">

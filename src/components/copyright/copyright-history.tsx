@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User, CopyrightClaim, CopyrightStrike } from "@/lib/types";
+import { User, CopyrightClaim, CopyrightStrike, Notification } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { format } from 'date-fns';
@@ -11,7 +11,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MessageSquare, Undo2, Loader2, FileSearch, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ref, update } from 'firebase/database';
+import { ref, update, push } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import {
   AlertDialog,
@@ -71,6 +71,17 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
     const receivedStrikes = currentUser.copyrightStrikes ? Object.values(currentUser.copyrightStrikes).sort((a, b) => b.receivedAt - a.receivedAt) : [];
     const activeStrikesCount = receivedStrikes.filter(s => s.status === 'active').length;
 
+    const createNotification = (userId: string, notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
+        const notifRef = push(ref(db, `users/${userId}/notifications`));
+        const newNotification: Notification = {
+            id: notifRef.key!,
+            ...notification,
+            timestamp: Date.now(),
+            isRead: false,
+        };
+        update(ref(db), { [`/users/${userId}/notifications/${notifRef.key}`]: newNotification });
+    };
+
     const handleRetractClick = (claim: CopyrightClaim) => {
         setSelectedClaim(claim);
         setIsRetractDialogOpen(true);
@@ -117,6 +128,13 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
             
             // Mark the strike as retracted instead of removing it
             updates[`/users/${selectedClaim.accusedUserId}/copyrightStrikes/${selectedClaim.id}/status`] = 'retracted';
+
+            // Create notification for the user whose strike was retracted
+            createNotification(selectedClaim.accusedUserId, {
+                type: 'COPYRIGHT_STRIKE_UPDATE',
+                message: `A copyright strike from ${currentUser.name} has been retracted.`,
+                link: '/copyright',
+            });
 
             await update(ref(db), updates);
             toast({ title: "Claim Retracted", description: "The copyright strike has been successfully updated to 'retracted'." });
