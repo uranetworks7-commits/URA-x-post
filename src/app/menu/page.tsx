@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 import {
   Users,
   Rss,
@@ -33,18 +33,9 @@ import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/header';
 import { RightSidebar } from '@/components/right-sidebar';
 
-const mainLinks = [
-  { icon: Rss, label: 'Feeds' },
-  { icon: Users, label: 'Friends' },
-  { icon: Store, label: 'Marketplace' },
-  { icon: Clapperboard, label: 'Watch' },
-];
-
 const shortcutLinks = [
-  { icon: Calendar, label: 'Events' },
   { icon: Clock, label: 'Memories' },
   { icon: Bookmark, label: 'Saved' },
-  { icon: Flag, label: 'Pages' },
 ];
 
 const settingLinks = [
@@ -153,12 +144,6 @@ export default function MenuPage() {
                         <span className="font-bold text-lg">{currentUser.name}</span>
                     </Button>
                 )}
-                {mainLinks.map(({ icon: Icon, label }) => (
-                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3">
-                    <Icon className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">{label}</span>
-                    </Button>
-                ))}
                 </div>
                 <Separator className="my-4" />
                 <h3 className="text-sm font-semibold text-muted-foreground px-3 mb-2">Your Shortcuts</h3>
