@@ -19,6 +19,8 @@ import {
   LogOut,
   ArrowLeft,
   BadgeCheck,
+  Copyright,
+  BarChart
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -33,13 +35,18 @@ import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/header';
 import { RightSidebar } from '@/components/right-sidebar';
 
-const shortcutLinks = [
-  { icon: Clock, label: 'Memories' },
-  { icon: Bookmark, label: 'Saved' },
+const socialLinks = [
+  { href: '/friends', icon: Users, label: 'Friends' },
+  { href: '/following', icon: Rss, label: 'Following' },
+];
+
+const activityLinks = [
+  { href: '/liked', icon: Bookmark, label: 'Saved' },
+  { href: '/comments', icon: Clock, label: 'Memories' },
 ];
 
 const settingLinks = [
-  { icon: ShieldQuestion, label: 'Help & Support' },
+    { href: 'mailto:uranetworksresponse@gmail.com', icon: ShieldQuestion, label: 'Help & Support' },
 ];
 
 export default function MenuPage() {
@@ -55,7 +62,15 @@ export default function MenuPage() {
         setIsClient(true);
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
-            setCurrentUser(JSON.parse(savedUser));
+            const user = JSON.parse(savedUser);
+            const userRef = ref(db, `users/${user.id}`);
+            onValue(userRef, (snapshot) => {
+                 if (snapshot.exists()) {
+                    setCurrentUser({id: user.id, ...snapshot.val()});
+                } else {
+                    handleLogout();
+                }
+            });
         } else {
             router.push('/');
         }
@@ -67,8 +82,10 @@ export default function MenuPage() {
                 id: key,
                 ...data[key]
               }));
-              const filtered = allPosts.filter(p => p.user && p.user.id === JSON.parse(savedUser!).id);
-              setUserPosts(filtered);
+               if (savedUser) {
+                  const filtered = allPosts.filter(p => p.user && p.user.id === JSON.parse(savedUser).id);
+                  setUserPosts(filtered);
+              }
             }
           });
 
@@ -134,26 +151,50 @@ export default function MenuPage() {
                 </Button>
                 <div className="space-y-1">
                 {currentUser && (
-                    <Button variant="ghost" className="w-full justify-start gap-3 px-3 h-14">
-                        <Avatar>
-                            <AvatarImage src={currentUser.avatar} />
-                            <AvatarFallback>
-                            <PostIcon className="h-6 w-6" />
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="font-bold text-lg">{currentUser.name}</span>
+                    <Button variant="ghost" className="w-full justify-start gap-3 px-3 h-14" asChild>
+                        <Link href={`/profile/${currentUser.id}`}>
+                            <Avatar>
+                                <AvatarImage src={currentUser.avatar} />
+                                <AvatarFallback>
+                                <PostIcon className="h-6 w-6" />
+                                </AvatarFallback>
+                            </Avatar>
+                            <span className="font-bold text-lg">{currentUser.name}</span>
+                        </Link>
                     </Button>
                 )}
                 </div>
                 <Separator className="my-4" />
-                <h3 className="text-sm font-semibold text-muted-foreground px-3 mb-2">Your Shortcuts</h3>
+
+                <h3 className="text-sm font-semibold text-muted-foreground px-3 mb-2">Social</h3>
                 <nav className="space-y-1">
-                {shortcutLinks.map(({ icon: Icon, label }) => (
-                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{label}</span>
+                {socialLinks.map(({ href, icon: Icon, label }) => (
+                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3" asChild>
+                        <Link href={href}>
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-semibold">{label}</span>
+                        </Link>
                     </Button>
                 ))}
+                </nav>
+                <Separator className="my-4" />
+                
+                <h3 className="text-sm font-semibold text-muted-foreground px-3 mb-2">Your Activity</h3>
+                <nav className="space-y-1">
+                {activityLinks.map(({ href, icon: Icon, label }) => (
+                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3" asChild>
+                         <Link href={href}>
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                            <span className="font-semibold">{label}</span>
+                        </Link>
+                    </Button>
+                ))}
+                         <Button variant="ghost" className="w-full justify-start gap-3 px-3" asChild>
+                             <Link href="/analytics">
+                                <BarChart className="h-5 w-5 text-muted-foreground" />
+                                <span className="font-semibold">Analytics</span>
+                            </Link>
+                        </Button>
                 </nav>
                  <Separator className="my-4" />
                 <Card>
@@ -161,6 +202,14 @@ export default function MenuPage() {
                         <CardTitle className="text-base">Your Content & Revenue</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
+                         <div className="flex items-center justify-between text-sm">
+                             <Button variant="ghost" className="w-full justify-start gap-3 px-0" asChild>
+                                 <Link href="/copyright">
+                                    <Copyright className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-semibold">Copyright Center</span>
+                                </Link>
+                             </Button>
+                        </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Account Status</span>
                             {currentUser.isMonetized ? (
@@ -201,10 +250,12 @@ export default function MenuPage() {
                     </Button>
                     </ProfileSettingsDialog>
                 )}
-                {settingLinks.map(({ icon: Icon, label }) => (
-                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{label}</span>
+                {settingLinks.map(({ href, icon: Icon, label }) => (
+                    <Button key={label} variant="ghost" className="w-full justify-start gap-3 px-3" asChild>
+                       <a href={href}>
+                         <Icon className="h-5 w-5 text-muted-foreground" />
+                         <span className="font-semibold">{label}</span>
+                       </a>
                     </Button>
                 ))}
                 <Button variant="ghost" className="w-full justify-start gap-3 px-3" onClick={handleLogout}>
