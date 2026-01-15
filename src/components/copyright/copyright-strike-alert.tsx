@@ -15,11 +15,11 @@ export function CopyrightStrikeAlert({ strikes }: CopyrightStrikeAlertProps) {
     if (strikeCount === 0) return null;
 
     let title = `You have ${strikeCount} active copyright strike${strikeCount > 1 ? 's' : ''}.`;
-    let description = `Another strike will result in further penalties. Strikes expire 7 days after being issued. Be careful.`;
+    let description = `Another strike will result in further penalties. Strikes expire 48 hours after being issued. Be careful.`;
 
     if (strikeCount >= 3) {
-        title = "You have received 3 copyright strikes.";
-        description = "Your account is scheduled for termination in 3 days. All strikes are now permanent.";
+        title = "You have 3 active copyright strikes.";
+        description = "Your account will be terminated soon due to multiple copyright violations. These strikes will not expire.";
     }
 
     return (

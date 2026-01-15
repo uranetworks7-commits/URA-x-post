@@ -159,56 +159,35 @@ function HomePageContent() {
     }
   }, [isClient, handleLogout, currentUser]);
 
-    // Handle copyright strike expiration and account status
+    // Handle copyright strike expiration
     useEffect(() => {
         if (!currentUser) return;
 
         const now = Date.now();
         const userRef = ref(db, `users/${currentUser.id}`);
         const updates: { [key: string]: any } = {};
-        let activeStrikeCount = 0;
         let hasChanges = false;
+        
+        const activeStrikes = currentUser.copyrightStrikes 
+            ? Object.values(currentUser.copyrightStrikes).filter(s => s.status === 'active')
+            : [];
 
-        if (currentUser.copyrightStrikes) {
+        if (activeStrikes.length >= 3) {
+            // With 3 strikes, they don't expire. No action needed here.
+        } else if (currentUser.copyrightStrikes) {
             Object.values(currentUser.copyrightStrikes).forEach(strike => {
-                if (strike.status === 'active') {
-                    if (now > strike.expiresAt) {
-                        updates[`copyrightStrikes/${strike.strikeId}/status`] = 'expired';
-                        hasChanges = true;
-                    } else {
-                        activeStrikeCount++;
-                    }
+                if (strike.status === 'active' && now > strike.expiresAt) {
+                    updates[`copyrightStrikes/${strike.strikeId}/status`] = 'expired';
+                    hasChanges = true;
                 }
             });
-        }
-        
-        if (activeStrikeCount >= 3) {
-            if (!currentUser.isLocked) {
-                updates['isLocked'] = true;
-                updates['accountStatus'] = 'terminated';
-                updates['terminationReason'] = 'Account terminated due to 3 active copyright strikes.';
-                hasChanges = true;
-
-                toast({
-                    title: "Account Locked",
-                    description: "Your account has been locked due to multiple copyright violations.",
-                    variant: "destructive",
-                    duration: Infinity,
-                });
-
-                // Log the user out after a short delay
-                setTimeout(() => {
-                   handleLogout();
-                   window.location.reload();
-                }, 5000);
-            }
         }
 
         if (hasChanges) {
             update(userRef, updates);
         }
 
-    }, [currentUser, toast, handleLogout]);
+    }, [currentUser]);
 
 
   // Reset daily post count if the day has changed (IST)
@@ -523,10 +502,6 @@ function HomePageContent() {
         // Iterate over all users to find a match
         for (const userId in usersData) {
             const user = usersData[userId];
-            
-            if (user.isLocked) {
-                continue; // Skip locked accounts
-            }
 
             if (mainAccountUsername && user.mainAccountUsername === mainAccountUsername) {
                 // If a main account username is provided, we prioritize it.
@@ -552,7 +527,7 @@ function HomePageContent() {
         } else {
              toast({
                 title: "Login Failed",
-                description: "No account found with the provided credentials, or the account is locked. Please check your details and try again.",
+                description: "No account found with the provided credentials. Please check your details and try again.",
                 variant: "destructive",
             });
         }
