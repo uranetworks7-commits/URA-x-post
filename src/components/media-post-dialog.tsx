@@ -274,7 +274,7 @@ export function MediaPostDialog({
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
                         <Button type="button" onClick={handlePrimaryAction} disabled={isUploading || isVerifying || (!!mediaUrlValue && !form.formState.isValid)}>
-                            {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isUrlVerified ? 'Post' : 'Verify URL'}
+                            {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isUrlVerified ? 'Post' : 'Verify Post'}
                         </Button>
                     </DialogFooter>
                 </form>
