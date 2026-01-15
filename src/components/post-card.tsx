@@ -294,7 +294,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           </Link>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <Link href={`/profile/${post.user.id}`} className="font-bold text-foreground hover:underline">{post.user.name}</Link>
+              <Link href={`/profile/${post.user.id}`} className="font-bold text-sm text-foreground hover:underline">{post.user.name}</Link>
               {post.user.isMonetized && <BadgeCheck className="h-5 w-5 text-blue-500" />}
               {!isPublisher && (
                   <Button 

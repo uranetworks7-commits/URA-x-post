@@ -126,7 +126,7 @@ export default function FollowingPage() {
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-bold">{user.name}</p>
+                            <p className="font-bold text-sm">{user.name}</p>
                             <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
                           </div>
                         </Link>
