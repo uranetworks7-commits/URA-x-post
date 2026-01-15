@@ -82,6 +82,7 @@ export interface User {
   name: string;
   avatar: string;
   mainAccountUsername: string;
+  theme?: 'light' | 'dark';
   isMonetized?: boolean;
   totalViews?: number;
   totalLikes?: number;

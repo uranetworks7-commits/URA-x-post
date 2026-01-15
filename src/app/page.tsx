@@ -18,6 +18,7 @@ import { Notification } from '@/lib/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TriangleAlert, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeSelectDialog } from '@/components/theme-select-dialog';
 
 
 const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
@@ -101,6 +102,8 @@ function HomePageContent() {
   const [sortBy, setSortBy] = useState<SortType>('feed');
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [theme, setTheme] = useState('dark');
+  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
+
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('currentUser');
@@ -108,16 +111,29 @@ function HomePageContent() {
   }, []);
   
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-  }, []);
+    // This effect runs once on mount to set the initial theme from localStorage or user data
+    if (currentUser?.theme) {
+        setTheme(currentUser.theme);
+    } else {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+    }
+  }, [currentUser?.theme]);
+
+  const handleSetTheme = useCallback((newTheme: 'light' | 'dark') => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (currentUser) {
+        update(ref(db, `users/${currentUser.id}`), { theme: newTheme });
+    }
+  }, [currentUser]);
 
   useEffect(() => {
+    // This effect applies the theme to the DOM whenever it changes
     if (typeof window !== 'undefined') {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
-        localStorage.setItem('theme', theme);
     }
   }, [theme]);
 
@@ -613,6 +629,10 @@ function HomePageContent() {
             const userToLogin = { id: foundUserId, ...foundUser };
             localStorage.setItem('currentUser', JSON.stringify(userToLogin));
             setCurrentUser(userToLogin);
+             // Check if theme is set. If not, open dialog.
+            if (!userToLogin.theme) {
+                setIsThemeDialogOpen(true);
+            }
         } else {
              toast({
                 title: "Login Failed",
@@ -691,6 +711,7 @@ function HomePageContent() {
 
 
   return (
+    <>
     <div className="flex flex-col h-screen">
       <Header 
         currentUser={currentUser}
@@ -698,7 +719,7 @@ function HomePageContent() {
         onUpdateProfile={handleUpdateProfile}
         userPosts={userPosts}
         theme={theme}
-        setTheme={setTheme}
+        setTheme={handleSetTheme}
       />
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
@@ -739,6 +760,12 @@ function HomePageContent() {
         <RightSidebar />
       </div>
     </div>
+    <ThemeSelectDialog
+        isOpen={isThemeDialogOpen}
+        onOpenChange={setIsThemeDialogOpen}
+        onThemeSelect={handleSetTheme}
+    />
+    </>
   );
 }
 

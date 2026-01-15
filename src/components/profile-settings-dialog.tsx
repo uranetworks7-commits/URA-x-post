@@ -14,6 +14,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import type { User } from './post-card';
 import { Switch } from './ui/switch';
+import { db } from '@/lib/firebase';
+import { ref, update } from 'firebase/database';
+
 
 interface ProfileSettingsDialogProps {
   currentUser: User;
@@ -22,7 +25,7 @@ interface ProfileSettingsDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   theme: string;
-  setTheme: (theme: string) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 export function ProfileSettingsDialog({
@@ -45,6 +48,15 @@ export function ProfileSettingsDialog({
   const handleSave = () => {
     onUpdateProfile(name, avatarUrl);
     onOpenChange(false);
+  };
+  
+  const handleThemeChange = (checked: boolean) => {
+    const newTheme = checked ? 'dark' : 'light';
+    setTheme(newTheme);
+    // Also update in Firebase
+    if (currentUser) {
+      update(ref(db, `users/${currentUser.id}`), { theme: newTheme });
+    }
   };
 
   return (
@@ -90,7 +102,7 @@ export function ProfileSettingsDialog({
                 <Switch
                     id="theme-switch"
                     checked={theme === 'dark'}
-                    onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                    onCheckedChange={handleThemeChange}
                 />
                 <Label htmlFor="theme-switch">Dark</Label>
             </div>
