@@ -178,7 +178,8 @@ export default function AnalyticsPage() {
         userPosts={userPosts}
       />
       <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-4xl mx-auto space-y-4">
             <Card>
                 <CardHeader className="p-4">
                     <div className="flex items-center justify-between">
@@ -420,7 +421,7 @@ export default function AnalyticsPage() {
                     </CardContent>
                 </Card>
             )}
-
+          </div>
         </main>
         <RightSidebar />
       </div>
@@ -444,6 +445,8 @@ export default function AnalyticsPage() {
     </>
   );
 }
+
+    
 
     
 
