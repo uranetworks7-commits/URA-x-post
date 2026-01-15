@@ -155,7 +155,10 @@ export function MediaPostDialog({
                     />
                      <div className='space-y-4'>
                         <div>
-                            <FormLabel>From Your Device</FormLabel>
+                            <div className="flex justify-between items-center">
+                                <FormLabel>From Your Device</FormLabel>
+                                <span className="text-xs text-muted-foreground">Max 4.5 MB</span>
+                            </div>
                             <Button 
                                 type="button" 
                                 variant="outline"
