@@ -2,7 +2,7 @@
 
 export interface Notification {
   id: string;
-  type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE';
+  type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE' | 'SYSTEM_MESSAGE';
   message: string;
   link?: string;
   timestamp: number;
@@ -10,6 +10,8 @@ export interface Notification {
   relatedUserId?: string; // The user who initiated the action (e.g., liked, followed)
   relatedPostId?: string;
   relatedPostContent?: string;
+  senderName?: string;
+  systemIcon?: 'alert' | 'dollar' | 'info';
 }
 
 export interface Withdrawal {

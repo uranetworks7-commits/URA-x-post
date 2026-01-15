@@ -2,7 +2,7 @@
 'use client';
 import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { ThumbsUp, UserPlus, AlertTriangle } from 'lucide-react';
+import { ThumbsUp, UserPlus, AlertTriangle, Info, DollarSign } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification, User } from '@/lib/types';
 import { PostIcon } from './post-icon';
@@ -16,7 +16,20 @@ interface NotificationItemProps {
     currentUser: User;
 }
 
-const getIcon = (type: Notification['type']) => {
+const getIcon = (type: Notification['type'], systemIcon?: Notification['systemIcon']) => {
+    if (type === 'SYSTEM_MESSAGE') {
+        switch (systemIcon) {
+            case 'alert':
+                return <AlertTriangle className="h-5 w-5 text-destructive" />;
+            case 'dollar':
+                return <DollarSign className="h-5 w-5 text-green-500" />;
+            case 'info':
+                return <Info className="h-5 w-5 text-blue-500" />;
+            default:
+                return <Info className="h-5 w-5 text-blue-500" />;
+        }
+    }
+
     switch (type) {
         case 'COPYRIGHT_STRIKE_NEW':
         case 'COPYRIGHT_STRIKE_UPDATE':
@@ -47,6 +60,9 @@ export function NotificationItem({ notification, currentUser }: NotificationItem
     }, [notification.relatedUserId]);
 
     const renderMessage = () => {
+        if (notification.type === 'SYSTEM_MESSAGE') {
+            return <p className="text-sm" dangerouslySetInnerHTML={{ __html: notification.message }} />;
+        }
         if (relatedUser && notification.message.includes(relatedUser.name)) {
             const parts = notification.message.split(relatedUser.name);
             return (
@@ -81,7 +97,7 @@ export function NotificationItem({ notification, currentUser }: NotificationItem
                     </Link>
                 ) : (
                     <div className="h-8 w-8 flex items-center justify-center bg-muted rounded-full">
-                        {getIcon(notification.type)}
+                        {getIcon(notification.type, notification.systemIcon)}
                     </div>
                 )}
             </div>
@@ -89,6 +105,7 @@ export function NotificationItem({ notification, currentUser }: NotificationItem
                 {renderMessage()}
                 <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                     {notification.senderName && ` from ${notification.senderName}`}
                 </p>
             </div>
         </div>

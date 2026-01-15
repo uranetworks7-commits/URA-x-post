@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Bell, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem } from './ui/dropdown-menu';
@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { NotificationItem } from './notification-item';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
+import { PasswordDialog } from './system-notification/password-dialog';
 
 interface NotificationBellProps {
     currentUser: User;
@@ -17,6 +18,9 @@ interface NotificationBellProps {
 
 export function NotificationBell({ currentUser }: NotificationBellProps) {
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+    const clickCount = useRef(0);
+    const clickTimer = useRef<NodeJS.Timeout | null>(null);
 
     const notifications = useMemo(() => {
         if (!currentUser.notifications) return [];
@@ -47,11 +51,28 @@ export function NotificationBell({ currentUser }: NotificationBellProps) {
         setIsClearConfirmOpen(false);
     };
 
+    const handleIconClick = () => {
+        clickCount.current += 1;
+
+        if (clickTimer.current) {
+            clearTimeout(clickTimer.current);
+        }
+
+        if (clickCount.current === 3) {
+            setIsPasswordDialogOpen(true);
+            clickCount.current = 0;
+        } else {
+            clickTimer.current = setTimeout(() => {
+                clickCount.current = 0;
+            }, 1000); // Reset after 1 second
+        }
+    };
+
     return (
         <>
             <DropdownMenu onOpenChange={handleOpenChange}>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted">
+                    <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted" onClick={handleIconClick}>
                         <Bell className="h-5 w-5" />
                         {hasUnread && (
                             <span className="absolute top-1 right-1 flex h-3 w-3">
@@ -93,6 +114,10 @@ export function NotificationBell({ currentUser }: NotificationBellProps) {
                 onOpenChange={setIsClearConfirmOpen}
                 onConfirm={handleClearAll}
                 title="Are you sure you want to clear all notifications?"
+            />
+            <PasswordDialog
+                isOpen={isPasswordDialogOpen}
+                onOpenChange={setIsPasswordDialogOpen}
             />
         </>
     );
