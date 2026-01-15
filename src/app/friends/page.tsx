@@ -10,14 +10,16 @@ import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Users, MessageSquare, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
 
 export default function FriendsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<{ [id: string]: User }>({});
   const [isClient, setIsClient] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +57,13 @@ export default function FriendsPage() {
         .map(userId => ({ id: userId, ...allUsers[userId] }))
         .filter(user => user.name && user.following && user.following[currentUser.id]); // Check for mutual follow
   }, [currentUser, allUsers]);
+  
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    return Object.values(allUsers).filter(user => 
+        user.name && user.id !== currentUser?.id && user.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, allUsers, currentUser]);
 
   const handleStartChat = (friendId: string) => {
     if (!currentUser) return;
@@ -94,36 +103,71 @@ export default function FriendsPage() {
                       <Users className="h-5 w-5 text-primary" />
                       Friends
                     </CardTitle>
-                    <CardDescription className="text-xs">Users you mutually follow.</CardDescription>
+                    <CardDescription className="text-xs">Search for users or see your mutual connections.</CardDescription>
                   </div>
+                </div>
+                 <div className="relative mt-4">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search for any user..."
+                        className="pl-8"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                {friendsList.length > 0 ? (
-                  <div className="space-y-3">
-                    {friendsList.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
-                        <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-bold text-sm">{user.name}</p>
-                            <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
-                          </div>
-                        </Link>
-                        <Button variant="outline" size="sm" onClick={() => handleStartChat(user.id)}>
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Chat
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                {searchQuery ? (
+                     <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-2">Search Results</h3>
+                        {searchResults.length > 0 ? (
+                            searchResults.map((user) => (
+                                <Link href={`/profile/${user.id}`} key={user.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={user.avatar} />
+                                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-bold text-sm">{user.name}</p>
+                                            <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                             <div className="text-center py-10">
+                                <p className="text-muted-foreground">No users found for "{searchQuery}".</p>
+                            </div>
+                        )}
+                    </div>
                 ) : (
-                  <div className="text-center py-10">
-                    <p className="text-muted-foreground">You have no friends yet. Start following people who follow you!</p>
-                  </div>
+                    friendsList.length > 0 ? (
+                    <div className="space-y-3">
+                        {friendsList.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
+                            <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.avatar} />
+                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-bold text-sm">{user.name}</p>
+                                <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
+                            </div>
+                            </Link>
+                            <Button variant="outline" size="sm" onClick={() => handleStartChat(user.id)}>
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                Chat
+                            </Button>
+                        </div>
+                        ))}
+                    </div>
+                    ) : (
+                    <div className="text-center py-10">
+                        <p className="text-muted-foreground">You have no friends yet. Start following people who follow you!</p>
+                    </div>
+                    )
                 )}
               </CardContent>
             </Card>
