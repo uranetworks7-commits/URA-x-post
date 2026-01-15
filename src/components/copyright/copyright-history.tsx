@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { format } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { MessageSquare, Undo2, Loader2, FileSearch } from 'lucide-react';
+import { MessageSquare, Undo2, Loader2, FileSearch, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ref, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CommunicationDialog } from './communication-dialog';
 import { StrikeContentDialog } from './strike-content-dialog';
+import { DeletePostConfirmDialog } from '../delete-post-dialog-confirm';
 
 
 interface CopyrightHistoryProps {
@@ -58,6 +59,7 @@ const getStatusColor = (status: 'pending' | 'approved' | 'rejected' | 'retracted
 export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
     const { toast } = useToast();
     const [isRetractDialogOpen, setIsRetractDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedClaim, setSelectedClaim] = useState<CopyrightClaim | null>(null);
     const [selectedStrike, setSelectedStrike] = useState<CopyrightStrike | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -81,6 +83,11 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
     const handleViewContentClick = (strike: CopyrightStrike) => {
         setSelectedStrike(strike);
         setIsContentDialogOpen(true);
+    };
+    
+    const handleDeleteClick = (strike: CopyrightStrike) => {
+        setSelectedStrike(strike);
+        setIsDeleteDialogOpen(true);
     };
 
     const handleConfirmRetract = async () => {
@@ -107,6 +114,26 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
             setSelectedClaim(null);
         }
     }
+    
+    const handleConfirmDelete = async () => {
+        if (!selectedStrike) return;
+        setIsProcessing(true);
+
+        try {
+            const updates: { [key: string]: any } = {};
+            updates[`/users/${currentUser.id}/copyrightStrikes/${selectedStrike.strikeId}`] = null;
+            
+            await update(ref(db), updates);
+            toast({ title: "Strike Deleted", description: "The strike has been removed from your history." });
+
+        } catch (error) {
+             toast({ title: "Error", description: "Failed to delete the strike.", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
+            setIsDeleteDialogOpen(false);
+            setSelectedStrike(null);
+        }
+    };
 
     return (
         <>
@@ -148,8 +175,13 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
                                             <Badge variant={getStatusVariant(strike.status)} className={getStatusColor(strike.status)}>{strike.status}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right space-x-2">
-                                            <Button variant="outline" size="sm" onClick={() => handleViewContentClick(strike)}><FileSearch className="h-4 w-4 mr-2" /> View Content</Button>
+                                            <Button variant="outline" size="sm" onClick={() => handleViewContentClick(strike)}><FileSearch className="h-4 w-4 mr-2" /> View</Button>
                                             <Button variant="outline" size="sm" onClick={() => handleContactClick({ id: strike.strikeId } as CopyrightClaim)}><MessageSquare className="h-4 w-4 mr-2" /> Contact</Button>
+                                             {(strike.status === 'expired' || strike.status === 'retracted') && (
+                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(strike)}>
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )) : (
@@ -212,6 +244,12 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        <DeletePostConfirmDialog
+            isOpen={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            onConfirm={handleConfirmDelete}
+            title="Are you sure you want to delete this strike from your history?"
+        />
         {selectedClaim && (
             <CommunicationDialog
                 isOpen={isCommDialogOpen}
