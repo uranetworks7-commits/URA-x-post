@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -31,6 +30,7 @@ import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 import { db } from '@/lib/firebase';
 import { ref, update, push, remove } from 'firebase/database';
 import { ScrollArea } from './ui/scroll-area';
+import { PostCommentsDialog } from './post-comments-dialog';
 
 
 const parseCount = (count: number | undefined): number => {
@@ -48,46 +48,13 @@ const formatCount = (count: number): string => {
     return count.toString();
 };
 
-function CommentOptionsMenu({ comment, post, currentUser, onDelete }: { comment: Comment; post: Post; currentUser: User; onDelete: () => void }) {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const canDelete = currentUser.id === post.user.id || currentUser.id === comment.user.id;
-
-  if (!canDelete) return null;
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <DeletePostConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={onDelete}
-        title="Are you sure you want to delete this comment?"
-      />
-    </>
-  );
-}
-
-
 export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo }: any) {
   // If post or post.user is missing, don't render the card.
   if (!post || !post.user) {
     return null;
   }
   
-  const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPostIdDialogOpen, setIsPostIdDialogOpen] = useState(false);
@@ -220,7 +187,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   };
   
   const handleToggleComments = () => {
-    setShowComments(!showComments);
+    setIsCommentsOpen(!isCommentsOpen);
   };
 
   const handleShare = () => {
@@ -239,14 +206,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       });
     });
   };
-  
-  const handleCommentSubmit = () => {
-    if (commentText.trim()) {
-      onAddComment(post.id, commentText);
-      setCommentText('');
-    }
-  };
-  
+
   const handleCodeReport = (code: string) => {
     if (code === '225') {
       onDeletePost(post.id);
@@ -483,83 +443,34 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
             <Share2 className="h-5 w-5" /> Share
           </Button>
         </div>
-        {showComments && (
-            <div className="w-full p-4 pt-2">
-                <Separator className="mb-4" />
-                <h4 className="text-sm font-semibold mb-2">Comments</h4>
-                <ScrollArea className="max-h-48 w-full pr-3 mb-4">
-                    <div className="space-y-3">
-                        {sortedComments.length > 0 ? (
-                            sortedComments.map((comment: Comment) => (
-                                <div key={comment.id} className="flex items-start gap-2 text-xs">
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarImage src={comment.user.avatar} />
-                                        <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="bg-secondary rounded-lg p-2 w-full">
-                                        <div className="flex justify-between items-center">
-                                          <div className="flex items-center gap-2">
-                                            <p className="font-bold">{comment.user.name}</p>
-                                            <p className="text-muted-foreground text-xs">
-                                              {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'just now'}
-                                            </p>
-                                          </div>
-                                          <CommentOptionsMenu 
-                                            comment={comment}
-                                            post={post}
-                                            currentUser={currentUser}
-                                            onDelete={() => onDeleteComment(post.id, comment.id)}
-                                          />
-                                        </div>
-                                        <p>{comment.text}</p>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-xs text-muted-foreground text-center py-4">No comments yet.</p>
-                        )}
-                    </div>
-                </ScrollArea>
-                 <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={currentUser.avatar} />
-                      <AvatarFallback>
-                        {currentUser.avatar ? currentUser.name.charAt(0) : <PostIcon className="h-5 w-5" />}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Input 
-                      placeholder="Write a comment..."
-                      className="bg-secondary border-none focus-visible:ring-0"
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()}
-                    />
-                    <Button size="icon" onClick={handleCommentSubmit} disabled={!commentText.trim()}>
-                      <Send className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-        )}
       </CardFooter>
     </Card>
-     {isPublisher && (
-        <DeletePostConfirmDialog
-          isOpen={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          onConfirm={() => onDeletePost(post.id)}
-          title="Do you want to delete this Post?"
-        />
-      )}
-      <PostIdDialog 
-        isOpen={isPostIdDialogOpen}
-        onOpenChange={setIsPostIdDialogOpen}
-        postId={post.id}
+    {isPublisher && (
+      <DeletePostConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={() => onDeletePost(post.id)}
+        title="Do you want to delete this Post?"
       />
-      <DeletePostDialog
-        isOpen={isUnfollowDialogOpen}
-        onOpenChange={setIsUnfollowDialogOpen}
-        onConfirm={confirmUnfollow}
-      />
+    )}
+    <PostIdDialog 
+      isOpen={isPostIdDialogOpen}
+      onOpenChange={setIsPostIdDialogOpen}
+      postId={post.id}
+    />
+    <PostCommentsDialog
+      isOpen={isCommentsOpen}
+      onOpenChange={setIsCommentsOpen}
+      post={post}
+      currentUser={currentUser}
+      onAddComment={onAddComment}
+      onDeleteComment={onDeleteComment}
+    />
+    <DeletePostDialog
+      isOpen={isUnfollowDialogOpen}
+      onOpenChange={setIsUnfollowDialogOpen}
+      onConfirm={confirmUnfollow}
+    />
     </>
   );
 }
