@@ -11,12 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright } from 'lucide-react';
+import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright, Users, Rss } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { WithdrawDialog } from '@/components/withdraw-dialog';
 import { PostDetailsDialog } from '@/components/post-details-dialog';
+import Link from 'next/link';
 
 
 export default function AnalyticsPage() {
@@ -85,6 +86,9 @@ export default function AnalyticsPage() {
       if (!userPosts) return 0;
       return userPosts.reduce((acc, post) => acc + Object.keys(post.likes || {}).length, 0);
   }, [userPosts]);
+
+  const followersCount = useMemo(() => currentUser?.followers ? Object.keys(currentUser.followers).length : 0, [currentUser]);
+  const followingCount = useMemo(() => currentUser?.following ? Object.keys(currentUser.following).length : 0, [currentUser]);
 
   const canBeMonetized = useMemo(() => {
       return totalViews >= 2000 && totalLikes >= 25;
@@ -210,17 +214,39 @@ export default function AnalyticsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-xs font-medium">Available for Withdrawal</CardTitle>
+                                <CardTitle className="text-xs font-medium">Available</CardTitle>
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold">₹{currentUser.isMonetized ? availableBalance.toFixed(2) : '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">{currentUser.isMonetized ? `Total revenue: ₹${totalRevenue.toFixed(2)}` : "Account not monetized"}</p>
+                                <p className="text-xs text-muted-foreground">{currentUser.isMonetized ? `Total: ₹${totalRevenue.toFixed(2)}` : "Not monetized"}</p>
                             </CardContent>
                         </Card>
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-xs font-medium">Total Followers</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold">{followersCount.toLocaleString()}</div>
+                                <p className="text-xs text-muted-foreground">&nbsp;</p>
+                            </CardContent>
+                        </Card>
+                        <Link href="/following" className="block">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-xs font-medium">Following</CardTitle>
+                                    <Rss className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-xl font-bold">{followingCount.toLocaleString()}</div>
+                                    <p className="text-xs text-muted-foreground">Click to view</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs font-medium">Total Views</CardTitle>
@@ -238,7 +264,7 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold">{totalLikes.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground">across all of your posts</p>
+                                <p className="text-xs text-muted-foreground">on your posts</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -415,5 +441,7 @@ export default function AnalyticsPage() {
     </>
   );
 }
+
+    
 
     
