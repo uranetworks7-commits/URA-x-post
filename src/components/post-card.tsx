@@ -1,5 +1,4 @@
 
-
 'use client';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -31,6 +30,7 @@ import Link from 'next/link';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 import { db } from '@/lib/firebase';
 import { ref, update, push, remove } from 'firebase/database';
+import { ScrollArea } from './ui/scroll-area';
 
 
 const parseCount = (count: number | undefined): number => {
@@ -487,37 +487,39 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
             <div className="w-full p-4 pt-2">
                 <Separator className="mb-4" />
                 <h4 className="text-sm font-semibold mb-2">Comments</h4>
-                <div className="space-y-3 mb-4">
-                    {sortedComments.length > 0 ? (
-                        sortedComments.map((comment: Comment) => (
-                            <div key={comment.id} className="flex items-start gap-2 text-xs">
-                                <Avatar className="h-6 w-6">
-                                    <AvatarImage src={comment.user.avatar} />
-                                    <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="bg-secondary rounded-lg p-2 w-full">
-                                    <div className="flex justify-between items-center">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-bold">{comment.user.name}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                          {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'just now'}
-                                        </p>
-                                      </div>
-                                      <CommentOptionsMenu 
-                                        comment={comment}
-                                        post={post}
-                                        currentUser={currentUser}
-                                        onDelete={() => onDeleteComment(post.id, comment.id)}
-                                      />
+                <ScrollArea className="max-h-48 w-full pr-3 mb-4">
+                    <div className="space-y-3">
+                        {sortedComments.length > 0 ? (
+                            sortedComments.map((comment: Comment) => (
+                                <div key={comment.id} className="flex items-start gap-2 text-xs">
+                                    <Avatar className="h-6 w-6">
+                                        <AvatarImage src={comment.user.avatar} />
+                                        <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-secondary rounded-lg p-2 w-full">
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex items-center gap-2">
+                                            <p className="font-bold">{comment.user.name}</p>
+                                            <p className="text-muted-foreground text-xs">
+                                              {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : 'just now'}
+                                            </p>
+                                          </div>
+                                          <CommentOptionsMenu 
+                                            comment={comment}
+                                            post={post}
+                                            currentUser={currentUser}
+                                            onDelete={() => onDeleteComment(post.id, comment.id)}
+                                          />
+                                        </div>
+                                        <p>{comment.text}</p>
                                     </div>
-                                    <p>{comment.text}</p>
                                 </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-xs text-muted-foreground">No comments yet.</p>
-                    )}
-                </div>
+                            ))
+                        ) : (
+                            <p className="text-xs text-muted-foreground text-center py-4">No comments yet.</p>
+                        )}
+                    </div>
+                </ScrollArea>
                  <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser.avatar} />

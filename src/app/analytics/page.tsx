@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, remove } from "firebase/database";
 import type { Post, User, Withdrawal } from '@/components/post-card';
 import { Header } from '@/components/header';
 import { RightSidebar } from '@/components/right-sidebar';
@@ -10,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright, Users, Rss } from 'lucide-react';
+import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright, Users, Rss, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { WithdrawDialog } from '@/components/withdraw-dialog';
 import { PostDetailsDialog } from '@/components/post-details-dialog';
 import Link from 'next/link';
+import { DeletePostConfirmDialog } from '@/components/delete-post-dialog-confirm';
 
 
 export default function AnalyticsPage() {
@@ -29,6 +30,8 @@ export default function AnalyticsPage() {
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
 
 
   useEffect(() => {
@@ -159,6 +162,25 @@ export default function AnalyticsPage() {
     });
   };
 
+  const handleDeleteClick = (post: Post) => {
+    setPostToDelete(post);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!postToDelete || !currentUser) return;
+
+    const postRef = ref(db, `posts/${postToDelete.id}`);
+    remove(postRef).then(() => {
+        toast({ title: "Post Deleted", description: "The post has been successfully removed." });
+    }).catch(err => {
+        toast({ title: "Failed to delete post", variant: "destructive" });
+    });
+    
+    setIsDeleteDialogOpen(false);
+    setPostToDelete(null);
+  };
+
 
   if (!isClient || !currentUser) {
     return null; // or a loading spinner
@@ -283,7 +305,7 @@ export default function AnalyticsPage() {
                                 <TableHead className="text-right text-xs">Likes</TableHead>
                                 <TableHead className="text-right text-xs">Comments</TableHead>
                                 <TableHead className="text-right text-xs">Revenue</TableHead>
-                                <TableHead className="text-right text-xs">Actions</TableHead>
+                                <TableHead className="text-right text-xs w-[180px]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -345,10 +367,14 @@ export default function AnalyticsPage() {
                                                 `₹${revenue.toFixed(2)}`
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-right text-xs">
+                                        <TableCell className="text-right text-xs space-x-1">
                                             <Button variant="outline" size="sm" onClick={() => handleViewDetails(post)}>
                                                 <Search className="h-3 w-3 mr-1" />
                                                 Details
+                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(post)}>
+                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                Delete
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -442,16 +468,12 @@ export default function AnalyticsPage() {
           currentUser={currentUser}
         />
       )}
+      <DeletePostConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Are you sure you want to delete this post?"
+       />
     </>
   );
 }
-
-    
-
-    
-
-    
-
-    
-
-    
