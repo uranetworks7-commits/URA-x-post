@@ -60,6 +60,11 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
         </Button>
       </nav>
       <div className="flex items-center gap-2">
+        <Link href="/friends">
+            <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted">
+                <MessageSquare className="h-5 w-5" />
+            </Button>
+        </Link>
         {currentUser && <NotificationBell currentUser={currentUser} />}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
