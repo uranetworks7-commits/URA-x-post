@@ -20,7 +20,8 @@ import {
   Home,
   BadgeCheck,
   Copyright,
-  BarChart
+  BarChart,
+  ThumbsUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -41,8 +42,9 @@ const socialLinks = [
 ];
 
 const activityLinks = [
-  { href: '/liked', icon: Bookmark, label: 'Saved' },
+  { href: '/liked', icon: ThumbsUp, label: 'Saved' },
   { href: '/comments', icon: Clock, label: 'Memories' },
+  { href: '/reels', icon: Clapperboard, label: 'Reels' },
 ];
 
 const settingLinks = [
@@ -272,5 +274,3 @@ export default function MenuPage() {
     );
 }
 
-
-    
