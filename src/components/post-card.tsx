@@ -27,6 +27,7 @@ import type { Post, User, Comment } from '@/lib/types';
 import { Badge } from './ui/badge';
 import { PostIdDialog } from './post-id-dialog';
 import Link from 'next/link';
+import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 
 const parseCount = (count: number | undefined): number => {
     if (typeof count === 'number') return count;
@@ -64,10 +65,11 @@ function CommentOptionsMenu({ comment, post, currentUser, onDelete }: { comment:
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <DeletePostDialog
+      <DeletePostConfirmDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={onDelete}
+        title="Are you sure you want to delete this comment?"
       />
     </>
   );
@@ -529,10 +531,11 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       </CardFooter>
     </Card>
      {isPublisher && (
-        <DeletePostDialog
+        <DeletePostConfirmDialog
           isOpen={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
           onConfirm={() => onDeletePost(post.id)}
+          title="Do you want to delete this Post?"
         />
       )}
       <PostIdDialog 
