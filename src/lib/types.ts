@@ -1,4 +1,5 @@
 
+
 export interface Notification {
   id: string;
   type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE';
@@ -57,6 +58,22 @@ export interface CopyrightClaim {
     date: number;
     status: 'pending' | 'approved' | 'rejected' | 'retracted';
     messages?: { [key: string]: CopyrightMessage };
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
+  readBy?: { [userId: string]: boolean };
+  deletedFor?: { [userId: string]: boolean };
+}
+
+export interface Chat {
+    [chatId: string]: {
+        messages: { [messageId: string]: Message };
+        lastMessage: Message;
+    }
 }
 
 

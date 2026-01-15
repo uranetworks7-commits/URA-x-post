@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Search, Home, Users, Clapperboard, Store, Menu, LogOut, Settings, PenSquare, BarChart, ThumbsUp, MessageSquare, ShieldCheck, Copyright } from 'lucide-react';
@@ -14,6 +15,7 @@ import { useState } from 'react';
 import { PostIcon } from './post-icon';
 import Link from 'next/link';
 import { NotificationBell } from './notification-bell';
+import { ChatBell } from './chat-bell';
 
 interface HeaderProps {
   currentUser: User | null;
@@ -60,11 +62,7 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
         </Button>
       </nav>
       <div className="flex items-center gap-2">
-        <Link href="/friends">
-            <Button variant="ghost" size="icon" className="relative rounded-full bg-secondary hover:bg-muted">
-                <MessageSquare className="h-5 w-5" />
-            </Button>
-        </Link>
+        {currentUser && <ChatBell currentUser={currentUser} />}
         {currentUser && <NotificationBell currentUser={currentUser} />}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

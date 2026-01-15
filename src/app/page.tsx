@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '@/lib/firebase';
@@ -15,6 +16,9 @@ import { Search } from 'lucide-react';
 import { PostIcon } from '@/components/post-icon';
 import { FilterDropdown, SortType } from '@/components/filter-dropdown';
 import { Notification } from '@/lib/types';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { TriangleAlert, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 
 const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
@@ -60,6 +64,23 @@ function LoadingScreen() {
             </div>
         </div>
     )
+}
+
+function TerminatedScreen({ onLogout }: { onLogout: () => void }) {
+    return (
+        <div className="fixed inset-0 bg-background flex items-center justify-center z-[100]">
+            <Alert variant="destructive" className="max-w-md">
+                <TriangleAlert className="h-4 w-4" />
+                <AlertTitle>Account Terminated</AlertTitle>
+                <AlertDescription>
+                    Your account has been terminated due to multiple copyright violations.
+                    <Button onClick={onLogout} variant="secondary" size="sm" className="mt-4 w-full">
+                        <LogOut className="mr-2 h-4 w-4" /> Log Out
+                    </Button>
+                </AlertDescription>
+            </Alert>
+        </div>
+    );
 }
 
 const getISTDateString = () => {
@@ -111,6 +132,12 @@ function HomePageContent() {
                 handleLogout();
                 return;
             }
+            
+            if (userDataFromDb.isLocked) {
+                 setCurrentUser({ id: savedUser.id, ...userDataFromDb }); // Update state to show terminated screen
+                 return;
+            }
+
 
             if (userDataFromDb.mainAccountUsername !== savedUser.mainAccountUsername) {
                 toast({
@@ -410,7 +437,7 @@ function HomePageContent() {
     });
   };
 
-  const handleLikePost = (postId: string) => {
+  const handleLikePost = (postId: string, isMutual: boolean) => {
     if (!currentUser) return;
     const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
     const post = posts.find(p => p.id === postId);
@@ -420,14 +447,14 @@ function HomePageContent() {
     } else {
       // Like
       set(postRef, true);
-      // Create notification for post author (if not the current user)
-      if (post && post.user.id !== currentUser.id) {
+      // Create notification for post author (if not the current user and they are mutuals)
+      if (post && post.user.id !== currentUser.id && isMutual) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
               type: 'POST_LIKE',
               message: `${currentUser.name} liked your post.`,
-              link: `/post/${post.id}`, // Assuming a post detail page might exist
+              link: `/post/${post.id}`,
               timestamp: Date.now(),
               isRead: false,
               relatedUserId: currentUser.id,
@@ -545,6 +572,10 @@ function HomePageContent() {
         // Iterate over all users to find a match
         for (const userId in usersData) {
             const user = usersData[userId];
+            
+            if(user.isLocked) {
+                continue; // Skip terminated accounts
+            }
 
             if (mainAccountUsername && user.mainAccountUsername === mainAccountUsername) {
                 // If a main account username is provided, we prioritize it.
@@ -570,7 +601,7 @@ function HomePageContent() {
         } else {
              toast({
                 title: "Login Failed",
-                description: "No account found with the provided credentials. Please check your details and try again.",
+                description: "No account found with the provided credentials, or the account is terminated. Please check your details and try again.",
                 variant: "destructive",
             });
         }
@@ -634,6 +665,10 @@ function HomePageContent() {
 
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+  
+  if (currentUser.isLocked) {
+      return <TerminatedScreen onLogout={handleLogout} />;
   }
   
   const today = getISTDateString();

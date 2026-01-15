@@ -1,4 +1,5 @@
 
+
 'use client';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -29,7 +30,7 @@ import { PostIdDialog } from './post-id-dialog';
 import Link from 'next/link';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 import { db } from '@/lib/firebase';
-import { ref, update, push } from 'firebase/database';
+import { ref, update, push, remove } from 'firebase/database';
 
 
 const parseCount = (count: number | undefined): number => {
@@ -192,10 +193,16 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
   const isLiked = useMemo(() => currentUser && post.likes && post.likes[currentUser.id], [currentUser, post.likes]);
   const isFollowing = useMemo(() => currentUser && currentUser.following && currentUser.following[post.user.id], [currentUser, post.user.id]);
+  const isMutual = useMemo(() => {
+      if (!currentUser || !post.user) return false;
+      const iFollowThem = currentUser.following && currentUser.following[post.user.id];
+      const theyFollowMe = post.user.following && post.user.following[currentUser.id];
+      return iFollowThem && theyFollowMe;
+  }, [currentUser, post.user]);
 
 
   const handleLike = () => {
-    onLikePost(post.id);
+    onLikePost(post.id, isMutual);
   };
 
   const handleFollowClick = (e: React.MouseEvent) => {
