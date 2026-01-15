@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { z } from 'zod';
@@ -171,6 +170,14 @@ export function MediaPostDialog({
     onOpenChange(false);
   }
 
+  const handlePrimaryAction = () => {
+    if (isUrlVerified) {
+        form.handleSubmit(onSubmit)();
+    } else {
+        handleVerifyUrl();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -258,20 +265,6 @@ export function MediaPostDialog({
                                                 className={cn(isUrlVerified && "border-green-500 focus-visible:ring-green-500")}
                                             />
                                         </FormControl>
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          onClick={handleVerifyUrl}
-                                          disabled={isVerifying || !mediaUrlValue || isUrlVerified}
-                                        >
-                                          {isVerifying ? (
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                          ) : isUrlVerified ? (
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                          ) : (
-                                            <Link2 className="h-4 w-4" />
-                                          )}
-                                        </Button>
                                     </div>
                                     <FormMessage />
                                 </FormItem>
@@ -280,8 +273,8 @@ export function MediaPostDialog({
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button type="submit" disabled={!form.formState.isValid || isUploading || !isUrlVerified}>
-                            {isUploading ? 'Please wait...' : 'Post'}
+                        <Button type="button" onClick={handlePrimaryAction} disabled={isUploading || isVerifying || (!!mediaUrlValue && !form.formState.isValid)}>
+                            {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isUrlVerified ? 'Post' : 'Verify URL'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -291,5 +284,3 @@ export function MediaPostDialog({
     </Dialog>
   );
 }
-
-    
