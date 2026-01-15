@@ -33,6 +33,8 @@ interface LeftSidebarProps {
     onLogout: () => void;
     onUpdateProfile: (name: string, avatarUrl: string) => void;
     userPosts: Post[];
+    theme: string;
+    setTheme: (theme: string) => void;
 }
 
 const mainLinks = [
@@ -50,7 +52,7 @@ const settingLinks = [
   { icon: ShieldQuestion, label: 'Help & Support' },
 ];
 
-export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts }: LeftSidebarProps) {
+export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts, theme, setTheme }: LeftSidebarProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const totalRevenue = useMemo(() => {
@@ -131,6 +133,8 @@ export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts 
               onUpdateProfile={onUpdateProfile}
               isOpen={isSettingsOpen}
               onOpenChange={setIsSettingsOpen}
+              theme={theme}
+              setTheme={setTheme}
             >
               <Button variant="ghost" className="w-full justify-start gap-3 px-3" onClick={() => setIsSettingsOpen(true)}>
                 <Settings className="h-5 w-5 text-muted-foreground" />

@@ -22,10 +22,12 @@ interface HeaderProps {
   onLogout: () => void;
   onUpdateProfile: (name: string, avatarUrl: string) => void;
   userPosts: Post[];
+  theme: string;
+  setTheme: (theme: string) => void;
 }
 
 
-export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: HeaderProps) {
+export function Header({ currentUser, onLogout, onUpdateProfile, userPosts, theme, setTheme }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between h-14 px-4 bg-card border-b border-border shadow-sm">
@@ -39,7 +41,7 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64 bg-card">
             <SheetTitle className="sr-only">Menu</SheetTitle>
-            {currentUser && <LeftSidebar currentUser={currentUser} onLogout={onLogout} onUpdateProfile={onUpdateProfile} userPosts={userPosts} />}
+            {currentUser && <LeftSidebar currentUser={currentUser} onLogout={onLogout} onUpdateProfile={onUpdateProfile} userPosts={userPosts} theme={theme} setTheme={setTheme}/>}
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2">
@@ -111,6 +113,8 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts }: He
               onUpdateProfile={onUpdateProfile}
               isOpen={isSettingsOpen}
               onOpenChange={setIsSettingsOpen}
+              theme={theme}
+              setTheme={setTheme}
             >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

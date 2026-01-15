@@ -101,11 +101,25 @@ function HomePageContent() {
   const [viewedPosts, setViewedPosts] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortType>('feed');
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [theme, setTheme] = useState('dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
   }, []);
+  
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -682,6 +696,8 @@ function HomePageContent() {
         onLogout={handleLogout}
         onUpdateProfile={handleUpdateProfile}
         userPosts={userPosts}
+        theme={theme}
+        setTheme={setTheme}
       />
       <div className="flex flex-1 overflow-hidden">
         <LeftSidebar 
@@ -689,6 +705,8 @@ function HomePageContent() {
             onLogout={handleLogout}
             onUpdateProfile={handleUpdateProfile}
             userPosts={userPosts}
+            theme={theme}
+            setTheme={setTheme}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
             <CreatePost 

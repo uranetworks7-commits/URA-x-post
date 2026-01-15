@@ -13,6 +13,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import type { User } from './post-card';
+import { Switch } from './ui/switch';
 
 interface ProfileSettingsDialogProps {
   currentUser: User;
@@ -20,6 +21,8 @@ interface ProfileSettingsDialogProps {
   children: React.ReactNode;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  theme: string;
+  setTheme: (theme: string) => void;
 }
 
 export function ProfileSettingsDialog({
@@ -27,7 +30,9 @@ export function ProfileSettingsDialog({
   onUpdateProfile,
   children,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  theme,
+  setTheme
 }: ProfileSettingsDialogProps) {
   const [name, setName] = useState(currentUser.name);
   const [avatarUrl, setAvatarUrl] = useState(currentUser.avatar);
@@ -49,7 +54,7 @@ export function ProfileSettingsDialog({
         <DialogHeader>
           <DialogTitle>Profile Settings</DialogTitle>
           <DialogDescription>
-            Update your name and profile picture.
+            Update your profile and application settings.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -75,6 +80,20 @@ export function ProfileSettingsDialog({
               className="col-span-3"
               placeholder="https://example.com/image.png"
             />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="theme" className="text-right">
+              Theme
+            </Label>
+            <div className="col-span-3 flex items-center space-x-2">
+                <Label htmlFor="theme-switch">Light</Label>
+                <Switch
+                    id="theme-switch"
+                    checked={theme === 'dark'}
+                    onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                />
+                <Label htmlFor="theme-switch">Dark</Label>
+            </div>
           </div>
         </div>
         <DialogFooter>
