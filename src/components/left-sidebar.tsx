@@ -39,7 +39,6 @@ interface LeftSidebarProps {
 
 const mainLinks = [
   { icon: Rss, label: 'Feeds' },
-  { icon: Bookmark, label: 'Saved' },
 ];
 
 const settingLinks = [

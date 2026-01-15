@@ -53,15 +53,6 @@ export function Header({ currentUser, onLogout, onUpdateProfile, userPosts, them
         <Button variant="ghost" size="icon" className="w-24 h-12 rounded-lg hover:bg-secondary">
           <Home className="h-6 w-6 text-primary" />
         </Button>
-        <Button variant="ghost" size="icon" className="w-24 h-12 rounded-lg hover:bg-secondary">
-          <Users className="h-6 w-6" />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-24 h-12 rounded-lg hover:bg-secondary">
-          <Clapperboard className="h-6 w-6" />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-24 h-12 rounded-lg hover:bg-secondary">
-          <Store className="h-6 w-6" />
-        </Button>
       </nav>
       <div className="flex items-center gap-2">
         {currentUser && <ChatBell currentUser={currentUser} />}
