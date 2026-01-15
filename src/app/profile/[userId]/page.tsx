@@ -26,6 +26,7 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
   const router = useRouter();
   const { toast } = useToast();
   const { userId: encodedUserId } = params;
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   
   useEffect(() => {
     setIsClient(true);
@@ -218,6 +219,8 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
                         onReportPost={emptyHandler}
                         onViewPost={emptyHandler}
                         onFollowUser={handleFollow}
+                        playingVideoId={playingVideoId}
+                        onPlayVideo={setPlayingVideoId}
                     />
                 )) : (
                     <div className="text-center py-10 text-muted-foreground">
