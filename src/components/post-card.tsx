@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -60,6 +60,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [isPostIdDialogOpen, setIsPostIdDialogOpen] = useState(false);
   const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -374,17 +376,25 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       </CardContent>
       {post.image && (
         <div className="relative w-full aspect-video bg-card cursor-pointer" onClick={() => onViewPost(post.id)}>
-           <Image 
-            src={post.image} 
-            alt="Post image" 
-            fill
-            className="object-cover"
-            data-ai-hint={post.imageHint}
-          />
+          {!imageError ? (
+            <Image 
+              src={post.image} 
+              alt="Post image" 
+              fill
+              className="object-cover"
+              data-ai-hint={post.imageHint}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
+              <ImageOff className="h-10 w-10" />
+            </div>
+          )}
         </div>
       )}
        {post.video && (
           <div className="w-full bg-black cursor-pointer" onDoubleClick={handleDoubleClick}>
+            {!videoError ? (
               <video
                   ref={videoRef}
                   src={post.video}
@@ -394,7 +404,13 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                   poster="https://i.postimg.cc/Z54t2P6S/20250927-145323.jpg"
                   className="w-full aspect-video object-contain"
                   preload="none"
+                  onError={() => setVideoError(true)}
               />
+            ) : (
+                <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
+                    <VideoOff className="h-10 w-10" />
+                </div>
+            )}
           </div>
         )}
       <div className="flex justify-between items-center text-xs text-muted-foreground p-2 px-4">
