@@ -506,4 +506,3 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   );
 }
 
-    
