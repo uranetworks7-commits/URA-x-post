@@ -66,6 +66,7 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
 
     const submittedClaims = currentUser.submittedClaims ? Object.values(currentUser.submittedClaims).sort((a, b) => b.date - a.date) : [];
     const receivedStrikes = currentUser.copyrightStrikes ? Object.values(currentUser.copyrightStrikes).sort((a, b) => b.receivedAt - a.receivedAt) : [];
+    const activeStrikesCount = receivedStrikes.filter(s => s.status === 'active').length;
 
     const handleRetractClick = (claim: CopyrightClaim) => {
         setSelectedClaim(claim);
@@ -136,7 +137,13 @@ export function CopyrightHistory({ currentUser }: CopyrightHistoryProps) {
                                     <TableRow key={strike.strikeId}>
                                         <TableCell>{strike.claimantName}</TableCell>
                                         <TableCell>{format(new Date(strike.receivedAt), 'dd MMM yy')}</TableCell>
-                                        <TableCell>{strike.status === 'active' ? format(new Date(strike.expiresAt), 'dd MMM yy') : 'N/A'}</TableCell>
+                                        <TableCell>
+                                            {activeStrikesCount >= 3 && strike.status === 'active' 
+                                                ? "Not Expired" 
+                                                : strike.status === 'active' 
+                                                    ? format(new Date(strike.expiresAt), 'dd MMM yy') 
+                                                    : 'N/A'}
+                                        </TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(strike.status)} className={getStatusColor(strike.status)}>{strike.status}</Badge>
                                         </TableCell>
