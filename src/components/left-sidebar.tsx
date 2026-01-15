@@ -38,14 +38,8 @@ interface LeftSidebarProps {
 }
 
 const mainLinks = [
-  { icon: Users, label: 'Friends' },
   { icon: Rss, label: 'Feeds' },
-  { icon: Store, label: 'Marketplace' },
-  { icon: Clapperboard, label: 'Watch' },
-  { icon: Calendar, label: 'Events' },
-  { icon: Clock, label: 'Memories' },
   { icon: Bookmark, label: 'Saved' },
-  { icon: Flag, label: 'Pages' },
 ];
 
 const settingLinks = [
@@ -153,9 +147,6 @@ export function LeftSidebar({ currentUser, onLogout, onUpdateProfile, userPosts,
               <span className="font-semibold">Logout</span>
             </Button>
         </nav>
-        <div className="p-4 mt-4 text-xs text-muted-foreground">
-          <p>Privacy · Terms · Advertising · Ad Choices · Cookies · More · POST Network © 2025</p>
-        </div>
       </ScrollArea>
     </aside>
   );
