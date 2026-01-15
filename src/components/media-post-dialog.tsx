@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Upload, Loader2, Link2 } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, Link2, CheckCircle } from 'lucide-react';
 import { uploadFile } from '@/lib/file-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,20 @@ const formSchema = z.object({
   mediaUrl: z.string().url({ message: "Please provide a valid URL." }),
 });
 
+const isSupportedHost = (url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        const supportedHosts = [
+            'files.catbox.moe',
+            'i.postimg.cc',
+            // Add other direct link hosts here
+        ];
+        return supportedHosts.some(host => parsedUrl.hostname.endsWith(host));
+    } catch (e) {
+        return false;
+    }
+};
+
 export function MediaPostDialog({ 
     isOpen, 
     onOpenChange, 
@@ -51,9 +65,12 @@ export function MediaPostDialog({
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUrlVerified, setIsUrlVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       content: initialContent,
       mediaUrl: "",
@@ -62,6 +79,12 @@ export function MediaPostDialog({
   
   const contentValue = form.watch('content');
   const mediaUrlValue = form.watch('mediaUrl');
+  
+  // Reset verification status if URL changes
+  useEffect(() => {
+    setIsUrlVerified(false);
+  }, [mediaUrlValue]);
+
 
   useEffect(() => {
     form.setValue('content', initialContent);
@@ -70,6 +93,8 @@ export function MediaPostDialog({
   useEffect(() => {
     if (!isOpen) {
       form.reset({ content: initialContent, mediaUrl: '' });
+      setIsUrlVerified(false);
+      setIsVerifying(false);
     }
   }, [isOpen, form, initialContent]);
 
@@ -94,6 +119,7 @@ export function MediaPostDialog({
     try {
         const url = await uploadFile(file);
         form.setValue('mediaUrl', url, { shouldValidate: true });
+        setIsUrlVerified(true); // Uploaded files are implicitly verified
         toast({
             title: "Upload Successful",
             description: "Your file has been uploaded and the URL is ready.",
@@ -110,6 +136,35 @@ export function MediaPostDialog({
     }
   };
 
+  const handleVerifyUrl = async () => {
+     setIsVerifying(true);
+     const url = form.getValues('mediaUrl');
+     
+     // Quick check for basic URL structure
+     const isZodValid = await form.trigger('mediaUrl');
+     if (!isZodValid) {
+         setIsVerifying(false);
+         return;
+     }
+
+     if (!isSupportedHost(url)) {
+        form.setError('mediaUrl', {
+            type: 'manual',
+            message: 'URL is not from a supported host. Use direct media links.'
+        });
+        setIsUrlVerified(false);
+     } else {
+        // Here you could add a HEAD request to see if URL is reachable
+        // For now, hostname check is enough to prevent most crashes.
+        setIsUrlVerified(true);
+        toast({
+            title: "URL Verified",
+            description: "The provided media link is valid.",
+        });
+     }
+     setIsVerifying(false);
+  };
+
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onCreatePost(values.content, values.mediaUrl);
@@ -122,7 +177,7 @@ export function MediaPostDialog({
         <DialogHeader>
           <DialogTitle>Create {mediaType === 'image' ? 'Image' : 'Video'} Post</DialogTitle>
           <DialogDescription>
-            Upload a file from your device or paste a direct URL to your media.
+            Upload a file or provide a verified URL for your media.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,13 +249,30 @@ export function MediaPostDialog({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>From a URL</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={`https://example.com/${mediaType}.png`}
-                                            {...field}
-                                            disabled={isUploading}
-                                        />
-                                    </FormControl>
+                                    <div className="flex gap-2">
+                                        <FormControl>
+                                            <Input
+                                                placeholder={`https://example.com/${mediaType}.png`}
+                                                {...field}
+                                                disabled={isUploading}
+                                                className={cn(isUrlVerified && "border-green-500 focus-visible:ring-green-500")}
+                                            />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          onClick={handleVerifyUrl}
+                                          disabled={isVerifying || !mediaUrlValue || isUrlVerified}
+                                        >
+                                          {isVerifying ? (
+                                            <Loader2 className="h-4 w-4 animate-spin"/>
+                                          ) : isUrlVerified ? (
+                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                          ) : (
+                                            <Link2 className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -208,7 +280,7 @@ export function MediaPostDialog({
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button type="submit" disabled={!form.formState.isValid || isUploading}>
+                        <Button type="submit" disabled={!form.formState.isValid || isUploading || !isUrlVerified}>
                             {isUploading ? 'Please wait...' : 'Post'}
                         </Button>
                     </DialogFooter>
@@ -219,3 +291,5 @@ export function MediaPostDialog({
     </Dialog>
   );
 }
+
+    
