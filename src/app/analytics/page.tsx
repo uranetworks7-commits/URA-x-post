@@ -89,6 +89,9 @@ export default function AnalyticsPage() {
   const followersCount = useMemo(() => currentUser?.followers ? Object.keys(currentUser.followers).length : 0, [currentUser]);
   const followingCount = useMemo(() => currentUser?.following ? Object.keys(currentUser.following).length : 0, [currentUser]);
 
+  const activeStrikes = useMemo(() => currentUser?.copyrightStrikes ? Object.values(currentUser.copyrightStrikes).filter(s => s.status === 'active') : [], [currentUser]);
+
+
   const canBeMonetized = useMemo(() => {
       return totalViews >= 2000 && totalLikes >= 25;
   }, [totalViews, totalLikes]);
@@ -204,7 +207,7 @@ export default function AnalyticsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs font-medium">Available</CardTitle>
@@ -255,6 +258,16 @@ export default function AnalyticsPage() {
                             <CardContent>
                                 <div className="text-xl font-bold">{totalLikes.toLocaleString()}</div>
                                 <p className="text-xs text-muted-foreground">on your posts</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-xs font-medium">Copyright Strikes</CardTitle>
+                                <Copyright className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold">{activeStrikes.length}</div>
+                                <p className="text-xs text-muted-foreground">Active strikes</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -431,6 +444,8 @@ export default function AnalyticsPage() {
     </>
   );
 }
+
+    
 
     
 

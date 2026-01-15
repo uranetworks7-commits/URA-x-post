@@ -17,7 +17,7 @@ import {
   Settings,
   ShieldQuestion,
   LogOut,
-  ArrowLeft,
+  Home,
   BadgeCheck,
   Copyright,
   BarChart
@@ -147,7 +147,7 @@ export default function MenuPage() {
         <div className="flex-1 flex overflow-hidden">
             <main className="flex-1 overflow-y-auto p-4 md:p-6">
                 <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+                    <Home className="mr-2 h-4 w-4" /> Back to Home
                 </Button>
                 <div className="space-y-1">
                 {currentUser && (
@@ -272,3 +272,5 @@ export default function MenuPage() {
     );
 }
 
+
+    
