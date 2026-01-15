@@ -31,8 +31,10 @@ interface MediaPostDialogProps {
     postLimitReached: boolean;
 }
 
+const charLimit = 4000;
+
 const formSchema = z.object({
-  content: z.string().min(1, { message: "Post content cannot be empty." }),
+  content: z.string().min(1, { message: "Post content cannot be empty." }).max(charLimit, {message: `Post cannot exceed ${charLimit} characters.`}),
   mediaUrl: z.string().url({ message: "Please provide a valid URL." }),
 });
 
@@ -58,6 +60,8 @@ export function MediaPostDialog({
     },
   });
   
+  const contentValue = form.watch('content');
+
   useEffect(() => {
     form.setValue('content', initialContent);
   }, [initialContent, form]);
@@ -144,9 +148,12 @@ export function MediaPostDialog({
                         name="content"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Post Content</FormLabel>
+                                <div className="flex justify-between items-center">
+                                    <FormLabel>Post Content</FormLabel>
+                                    <span className="text-xs text-muted-foreground">{contentValue.length} / {charLimit}</span>
+                                </div>
                                 <FormControl>
-                                <Textarea placeholder="What's on your mind?" {...field} />
+                                <Textarea placeholder="What's on your mind?" {...field} maxLength={charLimit} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

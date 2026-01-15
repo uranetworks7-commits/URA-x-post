@@ -86,11 +86,16 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPostIdDialogOpen, setIsPostIdDialogOpen] = useState(false);
   const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showControls, setShowControls] = useState(false);
+
+  const charLimit = 800;
+  const isLongPost = post.content.length > charLimit;
+  const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -388,7 +393,12 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         </div>
       </CardHeader>
       <CardContent className="px-4 pt-0 pb-2 cursor-pointer break-words" onClick={() => onViewPost(post.id)}>
-        <p>{post.content}</p>
+        <p className="whitespace-pre-wrap">{displayContent}</p>
+        {isLongPost && !isExpanded && (
+          <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+            Read more
+          </Button>
+        )}
       </CardContent>
       {post.image && (
         <div className="relative w-full aspect-video bg-card cursor-pointer" onClick={() => onViewPost(post.id)}>

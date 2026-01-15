@@ -44,6 +44,7 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
   };
 
   const postLimit = 2;
+  const charLimit = 4000;
 
   return (
     <>
@@ -62,10 +63,16 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
                 className="bg-secondary border-none focus-visible:ring-0 text-base"
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
+                maxLength={charLimit}
               />
-               <div className="mt-2 text-xs text-muted-foreground">
-                  <p>Daily Post Limit: {postCountToday} / {postLimit}</p>
-                  <Progress value={(postCountToday / postLimit) * 100} className="h-1 mt-1" />
+               <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  <div>
+                    <p>Daily Post Limit: {postCountToday} / {postLimit}</p>
+                    <Progress value={(postCountToday / postLimit) * 100} className="h-1 mt-1" />
+                  </div>
+                  <div className="text-right">
+                    {postContent.length} / {charLimit}
+                  </div>
                </div>
             </div>
           </div>
