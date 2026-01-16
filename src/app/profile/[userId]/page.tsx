@@ -102,6 +102,20 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
         // Follow
         updates[`/users/${currentUserId}/following/${userIdToFollow}`] = true;
         updates[`/users/${userIdToFollow}/followers/${currentUserId}`] = true;
+        
+        // Create notification for the user being followed
+        const notifRef = push(ref(db, `users/${userIdToFollow}/notifications`));
+        const newNotification: Notification = {
+            id: notifRef.key!,
+            type: 'NEW_FOLLOWER',
+            message: `${currentUser.name} started following you.`,
+            link: `/profile/${encodeURIComponent(currentUser.id)}`,
+            timestamp: Date.now(),
+            isRead: false,
+            relatedUserId: currentUser.id,
+        };
+        updates[`/users/${userIdToFollow}/notifications/${notifRef.key}`] = newNotification;
+
         update(ref(db), updates);
     }
   };
