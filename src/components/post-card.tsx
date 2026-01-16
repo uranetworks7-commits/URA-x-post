@@ -73,7 +73,7 @@ const isImageHostAllowed = (imageUrl?: string): boolean => {
 // -----------------------------------------
 
 
-export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo }: any) {
+export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo, showUnlikeIcon }: any) {
   // If post or post.user is missing, don't render the card.
   if (!post || !post.user) {
     return null;
@@ -337,6 +337,11 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 )}
             </div>
           </div>
+          {showUnlikeIcon && (
+            <Button variant="ghost" size="icon" onClick={handleLike} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          )}
           <ReportDialog
             isOpen={isReportDialogOpen}
             onOpenChange={setIsReportDialogOpen}
@@ -531,5 +536,3 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     </>
   );
 }
-
-

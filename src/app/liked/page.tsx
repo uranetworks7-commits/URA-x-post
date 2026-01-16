@@ -2,8 +2,8 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from "firebase/database";
-import type { Post, User } from '@/components/post-card';
+import { ref, onValue, set, push, remove, update } from "firebase/database";
+import type { Post, User, Comment } from '@/lib/types';
 import { Header } from '@/components/header';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,6 +17,8 @@ export default function LikedPostsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [viewedPosts, setViewedPosts] = useState<string[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -27,9 +29,14 @@ export default function LikedPostsPage() {
       onValue(userRef, (snapshot) => {
         const userData = snapshot.val();
         if (userData) {
-          setCurrentUser(userData);
+          setCurrentUser({id: user.id, ...userData});
         }
       });
+
+      const viewedPostsKey = `viewedPosts_${user.id}`;
+      const storedViewedPosts = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
+      setViewedPosts(storedViewedPosts);
+
     } else {
       router.push('/');
     }
@@ -70,12 +77,55 @@ export default function LikedPostsPage() {
     // This can be implemented if needed, but for now we keep it simple
   };
 
-  // Dummy handlers for PostCard props that are not used on this page
   const handleDeletePost = () => {};
-  const handleLikePost = () => {}; // This might need implementation if we want real-time unliking
-  const handleAddComment = () => {};
+
+  const handleLikePost = (postId: string) => {
+    if (!currentUser) return;
+    const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
+    // On this page, the main action is to unlike
+    remove(postRef);
+  };
+  
+  const handleAddComment = (postId: string, commentText: string) => {
+    if (!currentUser) return;
+    const commentsRef = ref(db, `posts/${postId}/comments`);
+    const newCommentRef = push(commentsRef);
+    const newComment: Omit<Comment, 'id'> = {
+      user: currentUser,
+      text: commentText,
+      createdAt: Date.now(),
+    };
+    set(newCommentRef, newComment);
+  };
+  
+  const handleDeleteComment = (postId: string, commentId: string) => {
+    if (!currentUser) return;
+    const commentRef = ref(db, `posts/${postId}/comments/${commentId}`);
+    remove(commentRef);
+  };
+  
   const handleReportPost = () => {};
-  const handleViewPost = () => {};
+  
+  const handleViewPost = (postId: string) => {
+    if (!currentUser || !isClient) return;
+
+    const viewedPostsKey = `viewedPosts_${currentUser.id}`;
+    let currentViewedPosts: string[] = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
+
+    if (!currentViewedPosts.includes(postId)) {
+      const postRef = ref(db, `posts/${postId}`);
+      const post = allPosts.find(p => p.id === postId);
+      if (post) {
+        const currentViews = post.views || 0;
+        update(postRef, { views: currentViews + 1 });
+        
+        currentViewedPosts.push(postId);
+        localStorage.setItem(viewedPostsKey, JSON.stringify(currentViewedPosts));
+      }
+    }
+  };
+
+  const handleFollowUser = () => {};
 
   if (!isClient || !currentUser) {
     return null; // Or a loading spinner
@@ -117,8 +167,13 @@ export default function LikedPostsPage() {
                       onDeletePost={handleDeletePost}
                       onLikePost={handleLikePost}
                       onAddComment={handleAddComment}
+                      onDeleteComment={handleDeleteComment}
                       onReportPost={handleReportPost}
                       onViewPost={handleViewPost}
+                      onFollowUser={handleFollowUser}
+                      showUnlikeIcon={true}
+                      playingVideoId={playingVideoId}
+                      onPlayVideo={setPlayingVideoId}
                     />
                   ))}
                 </div>
@@ -135,5 +190,3 @@ export default function LikedPostsPage() {
     </div>
   );
 }
-
-    
