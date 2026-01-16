@@ -14,6 +14,7 @@ import { ThumbsUp, MessageSquare, Eye, DollarSign, BadgeCheck } from 'lucide-rea
 import { useMemo, useState } from 'react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
+import { ScrollArea } from './ui/scroll-area';
 
 interface PostDetailsDialogProps {
   isOpen: boolean;
@@ -58,7 +59,12 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
     const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) {
+            setIsExpanded(false);
+        }
+        onOpenChange(open);
+    }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Post Details</DialogTitle>
@@ -83,11 +89,19 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
             </div>
 
             <div>
-              <p className="text-sm break-words whitespace-pre-wrap">{displayContent}</p>
-              {isLongPost && !isExpanded && (
-                <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
-                  Read more
-                </Button>
+              {isLongPost && isExpanded ? (
+                <ScrollArea className="h-48 w-full rounded-md border p-3">
+                  <p className="text-sm break-words whitespace-pre-wrap">{post.content}</p>
+                </ScrollArea>
+              ) : (
+                <>
+                  <p className="text-sm break-words whitespace-pre-wrap">{displayContent}</p>
+                  {isLongPost && !isExpanded && (
+                    <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+                      Read more
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
