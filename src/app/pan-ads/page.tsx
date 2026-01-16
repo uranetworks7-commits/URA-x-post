@@ -52,8 +52,9 @@ function CreateUserForm({ onAccountCreated }: { onAccountCreated: () => void }) 
             const formattedName = values.name.startsWith('@') ? values.name : `@${values.name}`;
             
             const userRef = push(ref(db, 'users'));
-            const userId = userRef.key;
-            if (!userId) throw new Error("Could not generate user ID");
+            const generatedKey = userRef.key;
+            if (!generatedKey) throw new Error("Could not generate user ID");
+            const userId = generatedKey.replace(/_/g, '-');
 
 
             const newUser: User = {
@@ -379,5 +380,3 @@ export default function PanAdsPage() {
         </div>
     );
 }
-
-    
