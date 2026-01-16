@@ -2,8 +2,8 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue, update, remove } from "firebase/database";
-import type { Post, User } from '@/lib/types';
+import { ref, onValue, update, remove, set, push } from "firebase/database";
+import type { Post, User, Comment, Notification } from '@/lib/types';
 import { Header } from '@/components/header';
 import { RightSidebar } from '@/components/right-sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,6 +26,7 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
   const { toast } = useToast();
   const { userId: encodedUserId } = params;
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [viewedPosts, setViewedPosts] = useState<string[]>([]);
   
   useEffect(() => {
     setIsClient(true);
@@ -39,6 +40,11 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
                 setCurrentUser({ id: user.id, ...userData });
             }
         });
+
+        const viewedPostsKey = `viewedPosts_${user.id}`;
+        const storedViewedPosts = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
+        setViewedPosts(storedViewedPosts);
+
         return () => {
             // No-op, listener will be detached when component unmounts if needed
             // off(userRef, 'value', listener) is not the right syntax for new sdk
@@ -129,6 +135,103 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
       return isFollowing && theyFollowMe;
   }, [currentUser, profileUser, isFollowing]);
 
+  const isMutual = useMemo(() => {
+    if (!currentUser || !profileUser) return false;
+    const iFollowThem = isFollowing;
+    const theyFollowMe = !!(profileUser.following && profileUser.following[currentUser.id]);
+    return iFollowThem && theyFollowMe;
+  }, [currentUser, profileUser, isFollowing]);
+
+
+  const handleLikePost = (postId: string) => {
+    if (!currentUser) return;
+    const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
+    const post = userPosts.find(p => p.id === postId);
+
+    if (post && post.likes && post.likes[currentUser.id]) {
+      remove(postRef);
+    } else {
+      set(postRef, true);
+      if (post && post.user.id !== currentUser.id && isMutual) {
+          const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
+          const newNotification: Notification = {
+              id: notifRef.key!,
+              type: 'POST_LIKE',
+              message: `${currentUser.name} liked your post.`,
+              link: `/post/${post.id}`,
+              timestamp: Date.now(),
+              isRead: false,
+              relatedUserId: currentUser.id,
+              relatedPostId: post.id,
+              relatedPostContent: post.content.substring(0, 50) + (post.content.length > 50 ? '...' : ''),
+          };
+          update(ref(db), { [`/users/${post.user.id}/notifications/${notifRef.key}`]: newNotification });
+      }
+    }
+  };
+
+  const handleAddComment = (postId: string, commentText: string) => {
+    if (!currentUser) return;
+    const commentsRef = ref(db, `posts/${postId}/comments`);
+    const newCommentRef = push(commentsRef);
+    const newComment: Omit<Comment, 'id'> = {
+      user: currentUser,
+      text: commentText,
+      createdAt: Date.now(),
+    };
+    set(newCommentRef, newComment);
+  };
+  
+  const handleDeleteComment = (postId: string, commentId: string) => {
+    if (!currentUser) return;
+    const commentRef = ref(db, `posts/${postId}/comments/${commentId}`);
+    remove(commentRef);
+  };
+  
+  const handleDeletePost = (postId: string) => {
+      if (!currentUser || currentUser.id !== profileUser?.id) return;
+      const postRef = ref(db, `posts/${postId}`);
+      remove(postRef);
+      toast({
+          title: "Post Deleted",
+          description: "Your post has been successfully removed.",
+      });
+  };
+
+  const handleReportPost = (postId: string, reason: string) => {
+    const reportsRef = ref(db, `reports/${postId}`);
+    const newReportRef = push(reportsRef);
+    set(newReportRef, {
+      reason,
+      reportedBy: currentUser?.id,
+      timestamp: Date.now(),
+    });
+    toast({
+      title: "Post Reported",
+      description: "Thank you for your feedback. We will review this post.",
+    });
+  };
+
+  const handleViewPost = (postId: string) => {
+    if (!currentUser || !isClient) return;
+
+    const viewedPostsKey = `viewedPosts_${currentUser.id}`;
+    let currentViewedPosts: string[] = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
+
+    if (!currentViewedPosts.includes(postId)) {
+      const postRef = ref(db, `posts/${postId}`);
+      const post = userPosts.find(p => p.id === postId);
+      if (post) {
+        const currentViews = post.views || 0;
+        update(postRef, { views: currentViews + 1 });
+        
+        currentViewedPosts.push(postId);
+        setViewedPosts(currentViewedPosts);
+        localStorage.setItem(viewedPostsKey, JSON.stringify(currentViewedPosts));
+      }
+    }
+  };
+
 
   if (!isClient || !currentUser || !profileUser) {
     return null; // or a loading spinner
@@ -138,8 +241,6 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
   const followersCount = profileUser.followers ? Object.keys(profileUser.followers).length : 0;
   const followingCount = profileUser.following ? Object.keys(profileUser.following).length : 0;
 
-  // Dummy handlers for PostCard props that are not used on this page
-  const emptyHandler = () => {};
 
   return (
     <>
@@ -202,12 +303,12 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
                         key={post.id} 
                         post={post} 
                         currentUser={currentUser}
-                        onLikePost={emptyHandler}
-                        onAddComment={emptyHandler}
-                        onDeleteComment={emptyHandler}
-                        onDeletePost={emptyHandler}
-                        onReportPost={emptyHandler}
-                        onViewPost={emptyHandler}
+                        onLikePost={handleLikePost}
+                        onAddComment={handleAddComment}
+                        onDeleteComment={handleDeleteComment}
+                        onDeletePost={handleDeletePost}
+                        onReportPost={handleReportPost}
+                        onViewPost={handleViewPost}
                         onFollowUser={handleFollow}
                         playingVideoId={playingVideoId}
                         onPlayVideo={setPlayingVideoId}
@@ -232,5 +333,3 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     </>
   );
 }
-
-    
