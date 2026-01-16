@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import {
@@ -12,8 +11,9 @@ import { PostIcon } from './post-icon';
 import type { Post, User } from './post-card';
 import { formatDistanceToNow } from 'date-fns';
 import { ThumbsUp, MessageSquare, Eye, DollarSign, BadgeCheck } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Separator } from './ui/separator';
+import { Button } from './ui/button';
 
 interface PostDetailsDialogProps {
   isOpen: boolean;
@@ -36,6 +36,8 @@ const formatCount = (count: number): string => {
 export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: PostDetailsDialogProps) {
     if (!post) return null;
 
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
     const commentsCount = useMemo(() => Object.keys(post.comments || {}).length, [post.comments]);
     const viewsCount = post.views || 0;
@@ -50,6 +52,10 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
         revenue = (viewsCount / 1250) * 10;
       }
     }
+
+    const charLimit = 800;
+    const isLongPost = post.content.length > charLimit;
+    const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -76,7 +82,14 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
                 </div>
             </div>
 
-            <p className="text-sm break-words">{post.content}</p>
+            <div>
+              <p className="text-sm break-words whitespace-pre-wrap">{displayContent}</p>
+              {isLongPost && !isExpanded && (
+                <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+                  Read more
+                </Button>
+              )}
+            </div>
 
             {post.image && (
                 <div className="relative w-full aspect-video bg-card rounded-md overflow-hidden">
