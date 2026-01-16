@@ -214,7 +214,7 @@ export default function MessagesPage({ params }: { params: { chatId: string } })
                                                 <div className={cn("max-w-xs p-3 rounded-lg text-sm", message.senderId === currentUser.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
                                                     <p>{message.text}</p>
                                                     <p className={cn("text-xs mt-1", message.senderId === currentUser.id ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                                        {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                                                        {message.timestamp ? formatDistanceToNow(new Date(message.timestamp), { addSuffix: true }) : ''}
                                                     </p>
                                                 </div>
                                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
