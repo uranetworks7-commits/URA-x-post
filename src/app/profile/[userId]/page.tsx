@@ -262,8 +262,8 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
       <Header 
         currentUser={currentUser}
         onLogout={() => {
-            localStorage.removeItem('currentUser');
-            router.push('/');
+            localStorage.clear();
+            window.location.reload();
         }}
         onUpdateProfile={() => {}} 
         userPosts={[]}
