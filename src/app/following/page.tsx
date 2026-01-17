@@ -120,7 +120,6 @@ export default function FollowingPage() {
                           </Avatar>
                           <div>
                             <p className="font-bold text-sm">{user.name}</p>
-                            <p className="text-xs text-muted-foreground">{user.mainAccountUsername}</p>
                           </div>
                         </Link>
                         <Button variant="outline" size="sm" onClick={() => handleUnfollowClick(user)}>
@@ -149,7 +148,3 @@ export default function FollowingPage() {
     </>
   );
 }
-
-    
-
-    
