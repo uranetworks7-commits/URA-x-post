@@ -106,9 +106,17 @@ function HomePageContent() {
 
 
   const handleLogout = useCallback(() => {
+    if (!navigator.onLine) {
+      toast({
+        title: "No Internet Connection",
+        description: "Please check your connection to log out.",
+        variant: "destructive",
+      });
+      return;
+    }
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
-  }, []);
+  }, [toast]);
   
   useEffect(() => {
     // This effect runs once on mount to set the initial theme from localStorage or user data
@@ -592,6 +600,14 @@ function HomePageContent() {
   };
 
  const handleLogin = async (name: string, mainAccountUsername: string) => {
+    if (!navigator.onLine) {
+        toast({
+            title: "No Internet Connection",
+            description: "Please check your connection to log in.",
+            variant: "destructive",
+        });
+        return;
+    }
     const usersRef = ref(db, 'users');
     const snapshot = await get(usersRef);
 
