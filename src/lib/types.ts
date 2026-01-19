@@ -118,6 +118,7 @@ export interface Post {
   videoThumbnail?: string;
   imageHint?: string;
   likes: { [key: string]: boolean };
+  likeNotified?: { [key: string]: boolean };
   comments: { [key: string]: Comment };
   views: number;
   createdAt: number;

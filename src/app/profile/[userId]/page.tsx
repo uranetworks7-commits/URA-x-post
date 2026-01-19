@@ -165,8 +165,10 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     if (post && post.likes && post.likes[currentUser.id]) {
       remove(postRef);
     } else {
-      set(postRef, true);
-      if (post && post.user.id !== currentUser.id && isMutual) {
+      const updates: { [key: string]: any } = {};
+      updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
+
+      if (post && post.user.id !== currentUser.id && isMutual && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
@@ -179,8 +181,10 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
               relatedPostId: post.id,
               relatedPostContent: post.content.substring(0, 50) + (post.content.length > 50 ? '...' : ''),
           };
-          update(ref(db), { [`/users/${post.user.id}/notifications/${notifRef.key}`]: newNotification });
+          updates[`/users/${post.user.id}/notifications/${notifRef.key}`] = newNotification;
+          updates[`/posts/${postId}/likeNotified/${currentUser.id}`] = true;
       }
+      update(ref(db), updates);
     }
   };
 
