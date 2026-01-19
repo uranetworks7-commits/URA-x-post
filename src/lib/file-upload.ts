@@ -5,6 +5,7 @@
  * Uploads a file by sending it to our own API route, which then proxies to catbox.moe.
  * @param file The file to upload.
  * @returns The URL of the uploaded file.
+ * @throws Will throw an error if the upload fails.
  */
 export async function uploadFile(file: File): Promise<string> {
   console.log(`Uploading file via proxy: ${file.name}`);
@@ -34,14 +35,10 @@ export async function uploadFile(file: File): Promise<string> {
 
   } catch (error) {
     console.error('File upload error:', error);
-    // Fallback to a placeholder if the upload fails for any reason
-    const isImage = file.type.startsWith('image/');
-    if (isImage) {
-      // A reliable image placeholder
-      return 'https://i.postimg.cc/8Cg1gW3w/placeholder.png';
-    } else {
-      // A reliable video placeholder
-      return 'https://files.catbox.moe/p28li7.mp4';
+    // Re-throw the error so the calling UI component can handle it and show a proper error message.
+    if (error instanceof Error) {
+        throw new Error(error.message || 'An unknown upload error occurred.');
     }
+    throw new Error('An unknown upload error occurred.');
   }
 }
