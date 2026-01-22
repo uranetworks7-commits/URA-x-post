@@ -441,8 +441,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
             <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
               {networkError ? (
                   <div className="relative">
-                      <ImageOff className="h-10 w-10" />
-                      <WifiOff className="h-5 w-5 absolute -bottom-1 -right-1 text-destructive" />
+                      <WifiOff className="h-10 w-10 text-destructive" />
+                      <ImageOff className="h-6 w-6 absolute -bottom-1 -right-1" />
                   </div>
               ) : (
                   <ImageOff className="h-10 w-10" />
@@ -474,8 +474,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
                     {networkError ? (
                         <div className="relative">
-                            <VideoOff className="h-10 w-10" />
-                            <WifiOff className="h-5 w-5 absolute -bottom-1 -right-1 text-destructive" />
+                            <WifiOff className="h-10 w-10 text-destructive" />
+                            <VideoOff className="h-6 w-6 absolute -bottom-1 -right-1" />
                         </div>
                     ) : (
                         <VideoOff className="h-10 w-10" />
