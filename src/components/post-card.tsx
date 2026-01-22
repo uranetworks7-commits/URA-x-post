@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, WifiOff } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -87,6 +87,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -429,11 +430,23 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
               fill
               className="object-cover"
               data-ai-hint={post.imageHint}
-              onError={() => setImageError(true)}
+              onError={() => {
+                  if (!navigator.onLine) {
+                      setNetworkError(true);
+                  }
+                  setImageError(true)
+              }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
-              <ImageOff className="h-10 w-10" />
+              {networkError ? (
+                  <div className="relative">
+                      <ImageOff className="h-10 w-10" />
+                      <WifiOff className="h-5 w-5 absolute -bottom-1 -right-1 text-destructive" />
+                  </div>
+              ) : (
+                  <ImageOff className="h-10 w-10" />
+              )}
             </div>
           )}
         </div>
@@ -450,11 +463,23 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                   poster="https://i.postimg.cc/Z54t2P6S/20250927-145323.jpg"
                   className="w-full aspect-video object-contain"
                   preload="none"
-                  onError={() => setVideoError(true)}
+                  onError={() => {
+                      if (!navigator.onLine) {
+                          setNetworkError(true);
+                      }
+                      setVideoError(true);
+                  }}
               />
             ) : (
                 <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
-                    <VideoOff className="h-10 w-10" />
+                    {networkError ? (
+                        <div className="relative">
+                            <VideoOff className="h-10 w-10" />
+                            <WifiOff className="h-5 w-5 absolute -bottom-1 -right-1 text-destructive" />
+                        </div>
+                    ) : (
+                        <VideoOff className="h-10 w-10" />
+                    )}
                 </div>
             )}
           </div>
