@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, WifiOff } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -440,9 +440,17 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
               {networkError ? (
-                  <div className="relative">
-                      <WifiOff className="h-10 w-10 text-destructive" />
-                      <ImageOff className="h-6 w-6 absolute -bottom-1 -right-1" />
+                  <div className="flex items-center justify-center gap-6">
+                      <div className="relative">
+                          <ImageOff className="h-12 w-12 text-gray-400" />
+                          <div className="absolute -bottom-1 -left-1">
+                              <AlertTriangle className="h-6 w-6 fill-gray-500 text-white" strokeWidth={1} />
+                          </div>
+                      </div>
+                      <div className="relative flex items-center justify-center">
+                          <Globe className="h-12 w-12 text-blue-400" />
+                          <Ban className="h-16 w-16 text-red-500/90 absolute" />
+                      </div>
                   </div>
               ) : (
                   <ImageOff className="h-10 w-10" />
@@ -473,9 +481,17 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
             ) : (
                 <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
                     {networkError ? (
-                        <div className="relative">
-                            <WifiOff className="h-10 w-10 text-destructive" />
-                            <VideoOff className="h-6 w-6 absolute -bottom-1 -right-1" />
+                        <div className="flex items-center justify-center gap-6">
+                            <div className="relative">
+                                <VideoOff className="h-12 w-12 text-gray-400" />
+                                <div className="absolute -bottom-1 -left-1">
+                                    <AlertTriangle className="h-6 w-6 fill-gray-500 text-white" strokeWidth={1} />
+                                </div>
+                            </div>
+                           <div className="relative flex items-center justify-center">
+                                <Globe className="h-12 w-12 text-blue-400" />
+                                <Ban className="h-16 w-16 text-red-500/90 absolute" />
+                            </div>
                         </div>
                     ) : (
                         <VideoOff className="h-10 w-10" />
