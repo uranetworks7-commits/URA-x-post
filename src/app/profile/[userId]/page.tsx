@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/lib/firebase';
@@ -149,14 +150,6 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
       return isFollowing && theyFollowMe;
   }, [currentUser, profileUser, isFollowing]);
 
-  const isMutual = useMemo(() => {
-    if (!currentUser || !profileUser) return false;
-    const iFollowThem = isFollowing;
-    const theyFollowMe = !!(profileUser.following && profileUser.following[currentUser.id]);
-    return iFollowThem && theyFollowMe;
-  }, [currentUser, profileUser, isFollowing]);
-
-
   const handleLikePost = (postId: string) => {
     if (!currentUser) return;
     const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
@@ -168,7 +161,7 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
       const updates: { [key: string]: any } = {};
       updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
 
-      if (post && post.user.id !== currentUser.id && isMutual && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
+      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
@@ -193,7 +186,12 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     const commentsRef = ref(db, `posts/${postId}/comments`);
     const newCommentRef = push(commentsRef);
     const newComment: Omit<Comment, 'id'> = {
-      user: currentUser,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+        isMonetized: currentUser.isMonetized || false,
+      },
       text: commentText,
       createdAt: Date.now(),
     };

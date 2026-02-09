@@ -202,16 +202,9 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
   const isLiked = useMemo(() => currentUser && post.likes && post.likes[currentUser.id], [currentUser, post.likes]);
   const isFollowing = useMemo(() => currentUser && currentUser.following && currentUser.following[post.user.id], [currentUser, post.user.id]);
-  const isMutual = useMemo(() => {
-      if (!currentUser || !post.user) return false;
-      const iFollowThem = currentUser.following && currentUser.following[post.user.id];
-      const theyFollowMe = post.user.following && post.user.following[currentUser.id];
-      return iFollowThem && theyFollowMe;
-  }, [currentUser, post.user]);
-
 
   const handleLike = () => {
-    onLikePost(post.id, isMutual);
+    onLikePost(post.id);
   };
 
   const handleFollowClick = (e: React.MouseEvent) => {

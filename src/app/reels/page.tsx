@@ -47,7 +47,7 @@ export default function ReelsPage() {
     });
   }, []);
 
-  const handleLikePost = (postId: string, isMutual: boolean) => {
+  const handleLikePost = (postId: string) => {
     if (!currentUser) return;
     const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
     const post = posts.find(p => p.id === postId);
@@ -56,7 +56,7 @@ export default function ReelsPage() {
     } else {
       const updates: { [key: string]: any } = {};
       updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
-       if (post && post.user.id !== currentUser.id && isMutual && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
+       if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
@@ -107,7 +107,12 @@ export default function ReelsPage() {
     const commentsRef = ref(db, `posts/${postId}/comments`);
     const newCommentRef = push(commentsRef);
     const newComment: Omit<Comment, 'id'> = {
-      user: currentUser,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+        isMonetized: currentUser.isMonetized || false,
+      },
       text: commentText,
       createdAt: Date.now(),
     };

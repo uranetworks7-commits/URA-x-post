@@ -197,8 +197,18 @@ function HomePageContent() {
         });
         
         const viewedPostsKey = `viewedPosts_${savedUser.id}`;
-        const storedViewedPosts = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
-        setViewedPosts(storedViewedPosts);
+        try {
+            const storedViewedPosts = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]');
+             if (Array.isArray(storedViewedPosts)) {
+                setViewedPosts(storedViewedPosts);
+            } else {
+                setViewedPosts([]);
+                localStorage.setItem(viewedPostsKey, JSON.stringify([]));
+            }
+        } catch (e) {
+            setViewedPosts([]);
+            localStorage.setItem(viewedPostsKey, JSON.stringify([]));
+        }
 
       }
 
@@ -399,7 +409,12 @@ function HomePageContent() {
     }
 
     const newPostData: Omit<Post, 'id'> = {
-      user: currentUser,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+        isMonetized: currentUser.isMonetized || false,
+      },
       content,
       likes: {},
       comments: {},
@@ -476,7 +491,7 @@ function HomePageContent() {
     });
   };
 
-  const handleLikePost = (postId: string, isMutual: boolean) => {
+  const handleLikePost = (postId: string) => {
     if (!currentUser) return;
     const postRef = ref(db, `posts/${postId}/likes/${currentUser.id}`);
     const post = posts.find(p => p.id === postId);
@@ -488,8 +503,8 @@ function HomePageContent() {
       const updates: { [key: string]: any } = {};
       updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
       
-      // Create notification for post author (if not the current user and they are mutuals and not already notified)
-      if (post && post.user.id !== currentUser.id && isMutual && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
+      // Create notification for post author (if not the current user and not already notified)
+      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
@@ -546,7 +561,12 @@ function HomePageContent() {
     const commentsRef = ref(db, `posts/${postId}/comments`);
     const newCommentRef = push(commentsRef);
     const newComment: Omit<Comment, 'id'> = {
-      user: currentUser,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+        isMonetized: currentUser.isMonetized || false,
+      },
       text: commentText,
       createdAt: Date.now(),
     };

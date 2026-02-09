@@ -1,5 +1,6 @@
 
 
+
 export interface Notification {
   id: string;
   type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE' | 'SYSTEM_MESSAGE';
@@ -104,14 +105,24 @@ export interface User {
 }
 export interface Comment {
     id: string;
-    user: User;
+    user: {
+      id: string;
+      name: string;
+      avatar: string;
+      isMonetized?: boolean;
+    };
     text: string;
     createdAt: number;
 }
 
 export interface Post {
   id: string;
-  user: User;
+  user: {
+      id: string;
+      name: string;
+      avatar: string;
+      isMonetized?: boolean;
+  };
   content: string;
   image?: string;
   video?: string;
