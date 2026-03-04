@@ -116,7 +116,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
 
   // Real-time watcher counting for Live streams using presence
   useEffect(() => {
-    if (!post.isLive || !post.id || !currentUser?.id) return;
+    if (!post.isLive || post.isEnded || !post.id || !currentUser?.id) return;
 
     const myPresenceRef = ref(db, `live_presence/${post.id}/${currentUser.id}`);
     const allWatchersRef = ref(db, `live_presence/${post.id}`);
@@ -143,7 +143,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         off(allWatchersRef, 'value', listener);
         remove(myPresenceRef);
     };
-  }, [post.isLive, post.id, currentUser?.id, playingVideoId]);
+  }, [post.isLive, post.isEnded, post.id, currentUser?.id, playingVideoId]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -211,6 +211,13 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   };
 
   const [timeAgo, setTimeAgo] = useState(() => {
+    if (post.isEnded && post.endedAt) {
+        try {
+            return `Stream ended ${formatDistanceToNow(new Date(post.endedAt), { addSuffix: true })}`;
+        } catch (e) {
+            return 'Stream ended';
+        }
+    }
     if (!post.createdAt) return 'just now';
     const secondsSinceCreation = (Date.now() - post.createdAt) / 1000;
     if (secondsSinceCreation < 15) {
@@ -227,6 +234,14 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     if (!post.createdAt || typeof post.createdAt !== 'number') return;
 
     const updateDisplayTime = () => {
+        if (post.isEnded && post.endedAt) {
+            try {
+                setTimeAgo(`Stream ended ${formatDistanceToNow(new Date(post.endedAt), { addSuffix: true })}`);
+            } catch (e) {
+                setTimeAgo('Stream ended');
+            }
+            return;
+        }
         if (post.createdAt) {
            try {
             setTimeAgo(formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }));
@@ -249,7 +264,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     const interval = setInterval(updateDisplayTime, 15000); // Update every 15 seconds
     return () => clearInterval(interval);
 
-  }, [post.createdAt]);
+  }, [post.createdAt, post.isEnded, post.endedAt]);
 
   
   const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
@@ -312,6 +327,18 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     }
   };
 
+  const handleEndStream = async () => {
+      try {
+          await update(ref(db, `posts/${post.id}`), {
+              isEnded: true,
+              endedAt: Date.now()
+          });
+          toast({ title: "Stream Ended", description: "The stream will be removed in 2 minutes." });
+      } catch (error) {
+          toast({ title: "Error", description: "Failed to end stream", variant: "destructive" });
+      }
+  };
+
   const handleSaveEdit = async () => {
       if (!editedContent.trim()) return;
       try {
@@ -364,7 +391,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
 
   return (
     <>
-    <Card className={cn(post.isCopyrighted && "border-destructive/50", post.isLive && "border-red-500 shadow-md ring-1 ring-red-500/20")}>
+    <Card className={cn(post.isCopyrighted && "border-destructive/50", post.isLive && !post.isEnded && "border-red-500 shadow-md ring-1 ring-red-500/20")}>
       <CardHeader className="p-4">
         <div className="flex items-center gap-3">
           <Link href={`/profile/${encodeURIComponent(post.user.id)}`}>
@@ -389,14 +416,19 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                     {isFollowing ? 'Following' : 'Follow'}
                   </Button>
               )}
-              {post.isLive && (
+              {post.isLive && !post.isEnded && (
                   <Badge className="bg-red-500 hover:bg-red-600 animate-pulse text-[10px] px-1.5 h-5">
                       <Radio className="h-3 w-3 mr-1" /> LIVE
                   </Badge>
               )}
+              {post.isEnded && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+                      Stream Ended
+                  </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">{post.isLive ? `Stream started ${timeAgo}` : timeAgo}</p>
+                <p className="text-xs text-muted-foreground">{post.isLive && !post.isEnded ? `Stream started ${timeAgo}` : timeAgo}</p>
                 {post.isCopyrighted && (
                     <Badge variant="destructive" className="text-xs">
                         <Copyright className="mr-1 h-3 w-3" />
@@ -405,7 +437,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 )}
             </div>
           </div>
-          {post.isLive && isPublisher && (
+          {post.isLive && isPublisher && !post.isEnded && (
               <Button variant="destructive" size="sm" className="h-8 gap-1" onClick={() => setIsDeleteDialogOpen(true)}>
                   <StopCircle className="h-4 w-4" /> End Live
               </Button>
@@ -437,7 +469,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                  )}
                  <DropdownMenuItem>
                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                   <span>{post.isLive ? 'Streaming' : 'Published'}</span>
+                   <span>{post.isLive ? (post.isEnded ? 'Stream Ended' : 'Streaming') : 'Published'}</span>
                  </DropdownMenuItem>
                  {isPostEligible && !post.isLive && (
                     <DropdownMenuItem className="text-blue-500">
@@ -448,7 +480,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{post.isLive ? `${formatCount(liveWatchers)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? (post.isEnded ? 'Stream ended' : `${formatCount(liveWatchers)} watching`) : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -479,7 +511,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 {isPublisher && (
                     <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />
-                      <span>{post.isLive ? 'End Stream' : 'Delete Post'}</span>
+                      <span>{post.isLive ? (post.isEnded ? 'Delete Post' : 'End Stream') : 'Delete Post'}</span>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setIsReportDialogOpen(true)} className="text-amber-500">
@@ -536,7 +568,12 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       </CardContent>
       {post.isLive ? (
           <div id={`live-container-${post.id}`} className="w-full aspect-video bg-black relative" onClick={(e) => e.stopPropagation()}>
-              {youtubeId ? (
+              {post.isEnded ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-white gap-2">
+                      <Radio className="h-12 w-12 text-muted-foreground opacity-50" />
+                      <p className="text-sm font-bold">Stream Ended</p>
+                  </div>
+              ) : youtubeId ? (
                   isCurrentlyPlaying ? (
                     <iframe
                         width="100%"
@@ -655,8 +692,14 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           </button>
           {post.isLive ? (
               <div className="flex items-center gap-1 text-red-500 font-bold">
-                  <Eye className="h-4 w-4" />
-                  <span>{formatCount(liveWatchers)} watching</span>
+                  {post.isEnded ? (
+                      <span>Stream ended</span>
+                  ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        <span>{formatCount(liveWatchers)} watching</span>
+                      </>
+                  )}
               </div>
           ) : (
               showStats && (
@@ -686,7 +729,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         </div>
       </div>
       <CardFooter className="p-0 border-t mx-4 flex-col items-start">
-        {post.isLive && showFeedback && (
+        {post.isLive && !post.isEnded && showFeedback && (
           <div className="flex w-full gap-2 py-3 border-b border-border/50">
             <Button 
               variant="secondary" 
@@ -726,8 +769,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       <DeletePostConfirmDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={() => onDeletePost(post.id)}
-        title={post.isLive ? "Do you want to end this Live stream?" : "Do you want to delete this Post?"}
+        onConfirm={post.isLive && !post.isEnded ? handleEndStream : () => onDeletePost(post.id)}
+        title={post.isLive && !post.isEnded ? "Do you want to end this Live stream?" : "Do you want to delete this Post?"}
       />
     )}
     <PostIdDialog 

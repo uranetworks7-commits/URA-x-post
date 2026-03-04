@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue, set, push, remove, update, query, orderByChild, equalTo, get } from "firebase/database";
 import { RightSidebar } from '@/components/right-sidebar';
-import { PostCard, Post, User, Comment } from '@/components/post-card';
+import { PostCard } from '@/components/post-card';
+import { Post, User, Comment } from '@/lib/types';
 import { CreatePost } from '@/components/create-post';
 import { Header } from '@/components/header';
 import { LoginPage } from '@/components/login-page';
@@ -21,7 +22,7 @@ import { ThemeSelectDialog } from '@/components/theme-select-dialog';
 
 const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
     {
-    user: { id: 'user-1', name: 'POST Studio', avatar: `https://placehold.co/150x150/222/fff?text=P`, isMonetized: false, totalViews: 0, totalLikes: 0 },
+    user: { id: 'user-1', name: 'POST Studio', avatar: `https://placehold.co/150x150/222/fff?text=P`, isMonetized: false },
     content: 'Welcome to the new POST-X platform! This is the beginning of something amazing. We are building a community-focused social network.',
     image: 'https://picsum.photos/seed/1/800/600',
     imageHint: 'abstract tech',
@@ -30,7 +31,7 @@ const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
     views: 1200,
   },
   {
-    user: { id: 'user-2', name: 'Dev Team', avatar: `https://placehold.co/150x150/222/fff?text=D`, isMonetized: false, totalViews: 0, totalLikes: 0 },
+    user: { id: 'user-2', name: 'Dev Team', avatar: `https://placehold.co/150x150/222/fff?text=D`, isMonetized: false },
     content: 'Just pushed a major update! The feed now looks cleaner and loads faster. Let us know what you think of the new design. #webdev #react #nextjs',
     image: 'https://picsum.photos/seed/2/800/500',
     imageHint: 'coding computer',
@@ -39,7 +40,7 @@ const initialPosts: Omit<Post, 'id' | 'createdAt'>[] = [
     views: 876,
   },
   {
-    user: { id: 'user-publisher', name: 'Original Publisher', avatar: `https://placehold.co/150x150/222/fff?text=O`, isMonetized: true, totalViews: 0, totalLikes: 0 },
+    user: { id: 'user-publisher', name: 'Original Publisher', avatar: `https://placehold.co/150x150/222/fff?text=O`, isMonetized: true },
     content: 'Having fun building this new social app. What feature should I add next? Here is a post where I should be able to see revenue.',
     image: 'https://picsum.photos/seed/sub/800/600',
     imageHint: 'developer coding',
@@ -367,6 +368,25 @@ function HomePageContent() {
                 }
             });
         }, intervalTime);
+
+        return () => clearInterval(interval);
+    }, [isClient, posts]);
+
+    // Cleanup for ended live streams (remove after 2 minutes)
+    useEffect(() => {
+        if (!isClient || posts.length === 0) return;
+
+        const interval = setInterval(() => {
+            const now = Date.now();
+            posts.forEach(post => {
+                if (post.isLive && post.isEnded && post.endedAt) {
+                    const elapsedMs = now - post.endedAt;
+                    if (elapsedMs > 2 * 60 * 1000) { // 2 minutes
+                        remove(ref(db, `posts/${post.id}`));
+                    }
+                }
+            });
+        }, 10000); // Check every 10 seconds
 
         return () => clearInterval(interval);
     }, [isClient, posts]);
@@ -748,9 +768,11 @@ function HomePageContent() {
                 const bDemoted = uninterestedPostIds.includes(b.id);
                 if (aDemoted !== bDemoted) return aDemoted ? 1 : -1;
 
-                // Prioritize live posts at the top
-                if (a.isLive && !b.isLive) return -1;
-                if (!a.isLive && b.isLive) return 1;
+                // Prioritize live posts (that aren't ended) at the top
+                const aIsLiveActive = a.isLive && !a.isEnded;
+                const bIsLiveActive = b.isLive && !b.isEnded;
+                if (aIsLiveActive && !bIsLiveActive) return -1;
+                if (!aIsLiveActive && bIsLiveActive) return 1;
 
                 const aIsViewed = viewedPosts.includes(a.id);
                 const bIsViewed = viewedPosts.includes(b.id);

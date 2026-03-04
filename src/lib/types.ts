@@ -138,6 +138,8 @@ export interface Post {
   isCopyrighted?: boolean;
   isLive?: boolean;
   liveUrl?: string;
+  isEnded?: boolean;
+  endedAt?: number;
   watchers?: number;
   fakeWatchers?: number;
   willHaveFakes?: boolean;
