@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban, Radio, StopCircle, Check } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban, Radio, StopCircle, Check, Pencil } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -17,6 +17,7 @@ import {
 import { Separator } from './ui/separator';
 import { PostIcon } from './post-icon';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
 import { ReportDialog } from './report-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -88,6 +89,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [isPostIdDialogOpen, setIsPostIdDialogOpen] = useState(false);
   const [isUnfollowDialogOpen, setIsUnfollowDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(post.content);
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [networkError, setNetworkError] = useState(false);
@@ -105,6 +108,10 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
   const isPublisher = post.user.id === currentUser.id;
+
+  useEffect(() => {
+    setEditedContent(post.content);
+  }, [post.content]);
 
   // Real-time watcher counting for Live streams
   useEffect(() => {
@@ -293,6 +300,20 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     }
   };
 
+  const handleSaveEdit = async () => {
+      if (!editedContent.trim()) return;
+      try {
+          const updates: { [key: string]: any } = {};
+          updates[`/posts/${post.id}/content`] = editedContent;
+          updates[`/private/${post.id}/content`] = editedContent;
+          await update(ref(db), updates);
+          setIsEditing(false);
+          toast({ title: "Post updated successfully" });
+      } catch (error) {
+          toast({ title: "Error", description: "Failed to update post", variant: "destructive" });
+      }
+  };
+
 
   const viewsCount = parseCount(post.views);
   
@@ -396,6 +417,12 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Post Details</DropdownMenuLabel>
+                 {isPublisher && !post.isLive && (
+                    <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Edit Post</span>
+                    </DropdownMenuItem>
+                 )}
                  <DropdownMenuItem>
                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                    <span>{post.isLive ? 'Streaming' : 'Published'}</span>
@@ -453,20 +480,40 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         </div>
       </CardHeader>
       <CardContent 
-        className={cn("px-4 pt-0 pb-2 break-words", !post.isLive && "cursor-pointer")} 
+        className={cn("px-4 pt-0 pb-2 break-words", !post.isLive && !isEditing && "cursor-pointer")} 
         onClick={(e) => {
-            if (post.isLive) {
+            if (post.isLive || isEditing) {
                 e.stopPropagation();
                 return;
             }
             onViewPost(post.id);
         }}
       >
-        <p className="font-bold text-sm mb-1">{displayContent}</p>
-        {isLongPost && !isExpanded && (
-          <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
-            Read more
-          </Button>
+        {isEditing ? (
+            <div className="space-y-2 mb-2">
+                <Textarea 
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="text-sm font-bold min-h-[100px]"
+                />
+                <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                        <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSaveEdit}>
+                        <Check className="h-4 w-4 mr-1" /> Save
+                    </Button>
+                </div>
+            </div>
+        ) : (
+            <>
+                <p className="font-bold text-sm mb-1">{displayContent}</p>
+                {isLongPost && !isExpanded && (
+                <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+                    Read more
+                </Button>
+                )}
+            </>
         )}
       </CardContent>
       {post.isLive ? (

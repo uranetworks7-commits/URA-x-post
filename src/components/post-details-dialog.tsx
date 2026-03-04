@@ -10,11 +10,15 @@ import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { PostIcon } from './post-icon';
 import type { Post, User } from './post-card';
 import { formatDistanceToNow } from 'date-fns';
-import { ThumbsUp, MessageSquare, Eye, DollarSign, BadgeCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ThumbsUp, MessageSquare, Eye, DollarSign, BadgeCheck, Pencil, Check, X } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
+import { Textarea } from './ui/textarea';
+import { db } from '@/lib/firebase';
+import { ref, update } from 'firebase/database';
+import { useToast } from '@/hooks/use-toast';
 
 interface PostDetailsDialogProps {
   isOpen: boolean;
@@ -37,7 +41,14 @@ const formatCount = (count: number): string => {
 export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: PostDetailsDialogProps) {
     if (!post) return null;
 
+    const { toast } = useToast();
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState(post.content);
+
+    useEffect(() => {
+        setEditedContent(post.content);
+    }, [post.content]);
 
     const likesCount = useMemo(() => Object.keys(post.likes || {}).length, [post.likes]);
     const commentsCount = useMemo(() => Object.keys(post.comments || {}).length, [post.comments]);
@@ -58,16 +69,36 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
     const isLongPost = post.content.length > charLimit;
     const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
+    const handleSaveEdit = async () => {
+        if (!editedContent.trim()) return;
+        try {
+            const updates: { [key: string]: any } = {};
+            updates[`/posts/${post.id}/content`] = editedContent;
+            updates[`/private/${post.id}/content`] = editedContent;
+            await update(ref(db), updates);
+            setIsEditing(false);
+            toast({ title: "Post updated successfully" });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update post content", variant: "destructive" });
+        }
+    };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
         if (!open) {
             setIsExpanded(false);
+            setIsEditing(false);
         }
         onOpenChange(open);
     }}>
       <DialogContent className="max-w-lg">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between pr-8">
           <DialogTitle>Post Details</DialogTitle>
+          {currentUser.id === post.user.id && !isEditing && (
+              <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-8 w-8">
+                  <Pencil className="h-4 w-4" />
+              </Button>
+          )}
         </DialogHeader>
         <div className="space-y-4">
              <div className="flex items-center gap-3">
@@ -89,19 +120,39 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
             </div>
 
             <div>
-              {isLongPost && isExpanded ? (
-                <ScrollArea className="h-48 w-full rounded-md border p-3">
-                  <p className="text-sm break-words whitespace-pre-wrap">{post.content}</p>
-                </ScrollArea>
+              {isEditing ? (
+                  <div className="space-y-2">
+                      <Textarea 
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="min-h-[120px] text-sm font-medium"
+                      />
+                      <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                              <X className="h-4 w-4 mr-1" /> Cancel
+                          </Button>
+                          <Button size="sm" onClick={handleSaveEdit}>
+                              <Check className="h-4 w-4 mr-1" /> Save
+                          </Button>
+                      </div>
+                  </div>
               ) : (
-                <>
-                  <p className="text-sm break-words whitespace-pre-wrap">{displayContent}</p>
-                  {isLongPost && !isExpanded && (
-                    <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
-                      Read more
-                    </Button>
-                  )}
-                </>
+                  <>
+                    {isLongPost && isExpanded ? (
+                        <ScrollArea className="h-48 w-full rounded-md border p-3">
+                        <p className="text-sm break-words whitespace-pre-wrap">{post.content}</p>
+                        </ScrollArea>
+                    ) : (
+                        <>
+                        <p className="text-sm break-words whitespace-pre-wrap">{displayContent}</p>
+                        {isLongPost && !isExpanded && (
+                            <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+                            Read more
+                            </Button>
+                        )}
+                        </>
+                    )}
+                  </>
               )}
             </div>
 
