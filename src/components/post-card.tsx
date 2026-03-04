@@ -77,7 +77,7 @@ const getYouTubeId = (url?: string) => {
 };
 
 
-export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo, showUnlikeIcon }: any) {
+export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo, showUnlikeIcon, onNotInterested }: any) {
   if (!post || !post.user) {
     return null;
   }
@@ -620,6 +620,26 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         </div>
       </div>
       <CardFooter className="p-0 border-t mx-4 flex-col items-start">
+        {post.isLive && (
+          <div className="flex w-full gap-2 py-3 border-b border-border/50">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="flex-1 h-9 font-semibold"
+              onClick={() => {}} // nothing happens
+            >
+              Interested
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 h-9 font-semibold text-muted-foreground hover:text-foreground"
+              onClick={() => onNotInterested?.(post.id)}
+            >
+              Not Interested
+            </Button>
+          </div>
+        )}
         <div className="flex justify-around w-full">
           <Button variant="ghost" className={cn("flex-1 gap-2 font-semibold", isLiked ? "text-primary" : "text-muted-foreground")} onClick={handleLike}>
             <ThumbsUp className="h-5 w-5" fill={isLiked ? "currentColor" : "none"} /> Like

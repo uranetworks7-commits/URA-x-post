@@ -101,6 +101,7 @@ function HomePageContent() {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [theme, setTheme] = useState('dark');
   const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
+  const [uninterestedPostIds, setUninterestedPostIds] = useState<string[]>([]);
 
 
   const handleLogout = useCallback(() => {
@@ -689,6 +690,17 @@ function HomePageContent() {
         });
     }
   };
+
+  const handleNotInterested = useCallback((postId: string) => {
+    setUninterestedPostIds(prev => {
+        if (prev.includes(postId)) return prev;
+        return [...prev, postId];
+    });
+    toast({
+        title: "Feedback Recorded",
+        description: "We'll show this stream lower in your feed.",
+    });
+  }, [toast]);
   
   const userPosts = useMemo(() => {
     if (!currentUser) return [];
@@ -709,18 +721,33 @@ function HomePageContent() {
     switch (sortBy) {
         case 'popular':
             sortedPosts.sort((a, b) => {
+                const aDemoted = uninterestedPostIds.includes(a.id);
+                const bDemoted = uninterestedPostIds.includes(b.id);
+                if (aDemoted !== bDemoted) return aDemoted ? 1 : -1;
+
                 const aPopularity = (a.views || 0) + Object.keys(a.likes || {}).length * 5;
                 const bPopularity = (b.views || 0) + Object.keys(b.likes || {}).length * 5;
                 return bPopularity - aPopularity;
             });
             break;
         case 'old':
-            sortedPosts.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            sortedPosts.sort((a, b) => {
+                const aDemoted = uninterestedPostIds.includes(a.id);
+                const bDemoted = uninterestedPostIds.includes(b.id);
+                if (aDemoted !== bDemoted) return aDemoted ? 1 : -1;
+
+                return (a.createdAt || 0) - (b.createdAt || 0);
+            });
             break;
         case 'feed':
         case 'newest':
         default:
              sortedPosts.sort((a, b) => {
+                // Handle uninterested content first
+                const aDemoted = uninterestedPostIds.includes(a.id);
+                const bDemoted = uninterestedPostIds.includes(b.id);
+                if (aDemoted !== bDemoted) return aDemoted ? 1 : -1;
+
                 // Prioritize live posts at the top
                 if (a.isLive && !b.isLive) return -1;
                 if (!a.isLive && b.isLive) return 1;
@@ -736,7 +763,7 @@ function HomePageContent() {
     }
 
     return sortedPosts;
-}, [posts, searchQuery, sortBy, viewedPosts]);
+}, [posts, searchQuery, sortBy, viewedPosts, uninterestedPostIds]);
 
 
   if (!isClient || isLoading) {
@@ -798,6 +825,7 @@ function HomePageContent() {
                     onFollowUser={handleFollowUser}
                     playingVideoId={playingVideoId}
                     onPlayVideo={setPlayingVideoId}
+                    onNotInterested={handleNotInterested}
                 />
               ))}
             </div>
