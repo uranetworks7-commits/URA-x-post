@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright, Users, Rss, Trash2 } from 'lucide-react';
+import { DollarSign, Eye, ThumbsUp, ArrowLeft, BadgeCheck, PartyPopper, History, Search, ShieldCheck, Copy, Copyright, Users, Rss, Trash2, Lock, Unlock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
@@ -19,9 +19,12 @@ import { PostDetailsDialog } from '@/components/post-details-dialog';
 import Link from 'next/link';
 import { DeletePostConfirmDialog } from '@/components/delete-post-dialog-confirm';
 
+// Extended type to track where the post is stored
+type PostWithLocation = Post & { storagePath: 'posts' | 'private' };
 
 export default function AnalyticsPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [publicPosts, setPublicPosts] = useState<Post[]>([]);
+  const [privatePosts, setPrivatePosts] = useState<Post[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
@@ -31,7 +34,9 @@ export default function AnalyticsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+  const [postToDelete, setPostToDelete] = useState<PostWithLocation | null>(null);
+  const [isPrivacyDialogOpen, setIsPrivacyDialogOpen] = useState(false);
+  const [postToTogglePrivacy, setPostToTogglePrivacy] = useState<PostWithLocation | null>(null);
 
 
   useEffect(() => {
@@ -54,24 +59,53 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (isClient) {
+      // Listen to public posts
       const postsRef = ref(db, 'posts');
-      onValue(postsRef, (snapshot) => {
+      const unsubscribePublic = onValue(postsRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          const allPosts: Post[] = Object.keys(data).map(key => ({
+          const list: Post[] = Object.keys(data).map(key => ({
             id: key,
             ...data[key]
           }));
-          setPosts(allPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+          setPublicPosts(list);
+        } else {
+          setPublicPosts([]);
         }
       });
+
+      // Listen to private posts
+      const privateRef = ref(db, 'private');
+      const unsubscribePrivate = onValue(privateRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const list: Post[] = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          setPrivatePosts(list);
+        } else {
+          setPrivatePosts([]);
+        }
+      });
+
+      return () => {
+        unsubscribePublic();
+        unsubscribePrivate();
+      };
     }
   }, [isClient]);
   
   const userPosts = useMemo(() => {
     if (!currentUser) return [];
-    return posts.filter(post => post && post.user && post.user.id === currentUser.id);
-  }, [posts, currentUser]);
+    const combined: PostWithLocation[] = [
+        ...publicPosts.map(p => ({ ...p, storagePath: 'posts' as const })),
+        ...privatePosts.map(p => ({ ...p, storagePath: 'private' as const }))
+    ];
+    return combined
+        .filter(post => post && post.user && post.user.id === currentUser.id)
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }, [publicPosts, privatePosts, currentUser]);
 
   const displayedPosts = useMemo(() => {
     if (showAllPosts || userPosts.length <= 3) {
@@ -162,7 +196,7 @@ export default function AnalyticsPage() {
     });
   };
 
-  const handleDeleteClick = (post: Post) => {
+  const handleDeleteClick = (post: PostWithLocation) => {
     setPostToDelete(post);
     setIsDeleteDialogOpen(true);
   };
@@ -170,7 +204,7 @@ export default function AnalyticsPage() {
   const confirmDelete = () => {
     if (!postToDelete || !currentUser) return;
 
-    const postRef = ref(db, `posts/${postToDelete.id}`);
+    const postRef = ref(db, `${postToDelete.storagePath}/${postToDelete.id}`);
     remove(postRef).then(() => {
         toast({ title: "Post Deleted", description: "The post has been successfully removed." });
     }).catch(err => {
@@ -179,6 +213,43 @@ export default function AnalyticsPage() {
     
     setIsDeleteDialogOpen(false);
     setPostToDelete(null);
+  };
+
+  const handlePrivacyClick = (post: PostWithLocation) => {
+    setPostToTogglePrivacy(post);
+    setIsPrivacyDialogOpen(true);
+  };
+
+  const confirmTogglePrivacy = async () => {
+    if (!postToTogglePrivacy || !currentUser) return;
+
+    const sourcePath = postToTogglePrivacy.storagePath;
+    const targetPath = sourcePath === 'posts' ? 'private' : 'posts';
+    
+    // Prepare data for the move (remove local tracking properties)
+    const postData = { ...postToTogglePrivacy };
+    const postId = postData.id;
+    delete (postData as any).id;
+    delete (postData as any).storagePath;
+
+    try {
+        const updates: { [key: string]: any } = {};
+        updates[`/${targetPath}/${postId}`] = postData;
+        updates[`/${sourcePath}/${postId}`] = null;
+
+        await update(ref(db), updates);
+        
+        toast({ 
+            title: sourcePath === 'posts' ? "Post Privated" : "Post Public", 
+            description: sourcePath === 'posts' ? "Post moved to private section." : "Post moved to public feed."
+        });
+    } catch (error) {
+        console.error("Privacy toggle failed:", error);
+        toast({ title: "Error", description: "Failed to change post privacy.", variant: "destructive" });
+    }
+
+    setIsPrivacyDialogOpen(false);
+    setPostToTogglePrivacy(null);
   };
 
 
@@ -305,7 +376,7 @@ export default function AnalyticsPage() {
                                 <TableHead className="text-right text-xs">Likes</TableHead>
                                 <TableHead className="text-right text-xs">Comments</TableHead>
                                 <TableHead className="text-right text-xs">Revenue</TableHead>
-                                <TableHead className="text-right text-xs w-[180px]">Actions</TableHead>
+                                <TableHead className="text-right text-xs w-[240px]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -324,17 +395,24 @@ export default function AnalyticsPage() {
                                     }
                                 }
 
-                                const isPostEligibleForMonetization = views > 1000 && likes >= 10;
-
                                 return (
                                     <TableRow key={post.id}>
-                                        <TableCell className="max-w-[100px] md:max-w-xs truncate font-medium text-xs">{post.content}</TableCell>
+                                        <TableCell className="max-w-[100px] md:max-w-xs truncate font-medium text-xs">
+                                            <div className="flex items-center gap-1">
+                                                {post.storagePath === 'private' && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                                {post.content}
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="text-xs">{format(new Date(post.createdAt), 'dd MMM yy')}</TableCell>
                                         <TableCell className="text-center">
                                             {post.isCopyrighted ? (
                                                 <Badge variant="destructive" className="text-xs">
                                                     <Copyright className="mr-1 h-3 w-3" />
                                                     Copyright
+                                                </Badge>
+                                            ) : post.storagePath === 'private' ? (
+                                                <Badge variant="outline" className="text-xs">
+                                                    Private
                                                 </Badge>
                                             ) : currentUser.isMonetized ? (
                                                 revenue > 0 ? (
@@ -371,6 +449,19 @@ export default function AnalyticsPage() {
                                             <Button variant="outline" size="sm" onClick={() => handleViewDetails(post)}>
                                                 <Search className="h-3 w-3 mr-1" />
                                                 Details
+                                            </Button>
+                                            <Button variant="outline" size="sm" onClick={() => handlePrivacyClick(post)}>
+                                                {post.storagePath === 'posts' ? (
+                                                    <>
+                                                        <Lock className="h-3 w-3 mr-1" />
+                                                        Private
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Unlock className="h-3 w-3 mr-1" />
+                                                        Public
+                                                    </>
+                                                )}
                                             </Button>
                                             <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(post)}>
                                                 <Trash2 className="h-3 w-3 mr-1" />
@@ -473,6 +564,12 @@ export default function AnalyticsPage() {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={confirmDelete}
         title="Are you sure you want to delete this post?"
+       />
+       <DeletePostConfirmDialog
+        isOpen={isPrivacyDialogOpen}
+        onOpenChange={setIsPrivacyDialogOpen}
+        onConfirm={confirmTogglePrivacy}
+        title={postToTogglePrivacy?.storagePath === 'posts' ? "Are you sure you want to make this post private?" : "Are you sure you want to make this post public?"}
        />
     </>
   );
