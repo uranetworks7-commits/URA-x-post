@@ -41,7 +41,8 @@ export default function ReelsPage() {
           id: key,
           ...data[key]
         })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setPosts(postsList);
+        // Exclude live posts from reels
+        setPosts(postsList.filter(p => !p.isLive));
       }
     });
   }, []);

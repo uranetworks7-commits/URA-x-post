@@ -45,8 +45,6 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
         setViewedPosts(storedViewedPosts);
 
         return () => {
-            // No-op, listener will be detached when component unmounts if needed
-            // off(userRef, 'value', listener) is not the right syntax for new sdk
         }
     } else {
       router.push('/');
@@ -73,14 +71,13 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
           id: key,
           ...data[key]
         }));
-        const filteredPosts = allPosts.filter(post => post.user && post.user.id === userId);
+        // Exclude live posts from profile view
+        const filteredPosts = allPosts.filter(post => post.user && post.user.id === userId && !post.isLive);
         setUserPosts(filteredPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
       }
     });
     
     return () => {
-        // Detach listeners
-        // `onValue` returns an unsubscribe function
         profileListener();
         postsListener();
     }
@@ -95,14 +92,11 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     const isCurrentlyFollowing = currentUser.following && currentUser.following[userIdToFollow];
 
     if (isCurrentlyFollowing) {
-        // Trigger confirmation dialog for unfollow
         setIsUnfollowDialogOpen(true);
     } else {
-        // Follow
         updates[`/users/${currentUserId}/following/${userIdToFollow}`] = true;
         updates[`/users/${userIdToFollow}/followers/${currentUserId}`] = true;
         
-        // Create notification for the user being followed
         const notifRef = push(ref(db, `users/${userIdToFollow}/notifications`));
         const newNotification: Notification = {
             id: notifRef.key!,
@@ -236,7 +230,7 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
     if (!currentViewedPosts.includes(postId)) {
       const postRef = ref(db, `posts/${postId}`);
       const post = userPosts.find(p => p.id === postId);
-      if (post) {
+      if (post && !post.isLive) {
         const currentViews = post.views || 0;
         update(postRef, { views: currentViews + 1 });
         

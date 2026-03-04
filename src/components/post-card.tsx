@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban, Radio, StopCircle } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -28,7 +28,7 @@ import { PostIdDialog } from './post-id-dialog';
 import Link from 'next/link';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 import { db } from '@/lib/firebase';
-import { ref, update, push, remove } from 'firebase/database';
+import { ref, update, push, remove, runTransaction, onValue, off } from 'firebase/database';
 import { ScrollArea } from './ui/scroll-area';
 import { PostCommentsDialog } from './post-comments-dialog';
 
@@ -48,7 +48,6 @@ const formatCount = (count: number): string => {
     return count.toString();
 };
 
-// --- Add this new helper function here ---
 const ALLOWED_IMAGE_HOSTS = [
   'placehold.co',
   'images.unsplash.com',
@@ -69,11 +68,16 @@ const isImageHostAllowed = (imageUrl?: string): boolean => {
     return false;
   }
 };
-// -----------------------------------------
+
+const getYouTubeId = (url?: string) => {
+    if (!url) return null;
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|live\/)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+};
 
 
 export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddComment, onDeleteComment, onReportPost, onViewPost, onFollowUser, playingVideoId, onPlayVideo, showUnlikeIcon }: any) {
-  // If post or post.user is missing, don't render the card.
   if (!post || !post.user) {
     return null;
   }
@@ -87,6 +91,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [liveWatchers, setLiveWatchers] = useState(0);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -97,6 +102,27 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const charLimit = 800;
   const isLongPost = post.content.length > charLimit;
   const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
+
+  // Real-time watcher counting for Live streams
+  useEffect(() => {
+    if (!post.isLive || !post.id) return;
+
+    const postRef = ref(db, `posts/${post.id}`);
+    const watchersRef = ref(db, `posts/${post.id}/watchers`);
+
+    // Increment watchers on mount
+    runTransaction(watchersRef, (current) => (current || 0) + 1);
+
+    const listener = onValue(watchersRef, (snapshot) => {
+        setLiveWatchers(snapshot.val() || 0);
+    });
+
+    return () => {
+        off(watchersRef, 'value', listener);
+        // Decrement watchers on unmount
+        runTransaction(watchersRef, (current) => Math.max(0, (current || 1) - 1));
+    };
+  }, [post.isLive, post.id]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -265,7 +291,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const isPostEligible = useMemo(() => viewsCount > 1000 && likesCount >= 10, [viewsCount, likesCount]);
 
   let revenue = 0;
-  if (post.user.isMonetized && !post.isCopyrighted) {
+  if (post.user.isMonetized && !post.isCopyrighted && !post.isLive) {
       if(post.video) {
         revenue = (viewsCount / 1250) * 25;
       } else if (post.image) {
@@ -292,9 +318,11 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
 
   const canShowImage = isImageHostAllowed(post.image) && !imageError;
 
+  const youtubeId = post.isLive ? getYouTubeId(post.liveUrl) : null;
+
   return (
     <>
-    <Card className={cn(post.isCopyrighted && "border-destructive/50")}>
+    <Card className={cn(post.isCopyrighted && "border-destructive/50", post.isLive && "border-red-500 shadow-md ring-1 ring-red-500/20")}>
       <CardHeader className="p-4">
         <div className="flex items-center gap-3">
           <Link href={`/profile/${encodeURIComponent(post.user.id)}`}>
@@ -319,9 +347,14 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                     {isFollowing ? 'Following' : 'Follow'}
                   </Button>
               )}
+              {post.isLive && (
+                  <Badge className="bg-red-500 hover:bg-red-600 animate-pulse text-[10px] px-1.5 h-5">
+                      <Radio className="h-3 w-3 mr-1" /> LIVE
+                  </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                <p className="text-xs text-muted-foreground">{post.isLive ? 'Started streaming now' : timeAgo}</p>
                 {post.isCopyrighted && (
                     <Badge variant="destructive" className="text-xs">
                         <Copyright className="mr-1 h-3 w-3" />
@@ -330,7 +363,12 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 )}
             </div>
           </div>
-          {showUnlikeIcon && (
+          {post.isLive && isPublisher && (
+              <Button variant="destructive" size="sm" className="h-8 gap-1" onClick={() => setIsDeleteDialogOpen(true)}>
+                  <StopCircle className="h-4 w-4" /> End Live
+              </Button>
+          )}
+          {showUnlikeIcon && !post.isLive && (
             <Button variant="ghost" size="icon" onClick={handleLike} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
               <Trash2 className="h-5 w-5" />
             </Button>
@@ -351,9 +389,9 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuLabel>Post Details</DropdownMenuLabel>
                  <DropdownMenuItem>
                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                   <span>Published</span>
+                   <span>{post.isLive ? 'Streaming' : 'Published'}</span>
                  </DropdownMenuItem>
-                 {isPostEligible && (
+                 {isPostEligible && !post.isLive && (
                     <DropdownMenuItem className="text-blue-500">
                       <BadgeCheck className="mr-2 h-4 w-4" />
                       <span>Eligible for Monetization</span>
@@ -362,7 +400,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? `${liveWatchers} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -372,14 +410,14 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                   <MessageSquare className="mr-2 h-4 w-4" />
                   <span>{formatCount(sortedComments.length)} Comments</span>
                 </DropdownMenuItem>
-                 {isPublisher && post.user.isMonetized && (
+                 {isPublisher && post.user.isMonetized && !post.isLive && (
                     <DropdownMenuItem disabled className={cn(showStats ? (post.isCopyrighted ? "text-destructive" : "text-green-500") : "text-muted-foreground")}>
                        <DollarSign className="mr-2 h-4 w-4" />
                        <span>{showStats ? (post.isCopyrighted ? 'No Revenue' : `₹${revenue.toFixed(2)} Revenue`) : 'Calculating Revenue...'}</span>
                     </DropdownMenuItem>
                  )}
                 <DropdownMenuSeparator />
-                {isPublisher && (
+                {isPublisher && !post.isLive && (
                    <DropdownMenuItem onClick={() => router.push('/analytics')}>
                     <PenSquare className="mr-2 h-4 w-4" />
                     <span>View Analytics</span>
@@ -393,7 +431,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 {isPublisher && (
                     <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete Post</span>
+                      <span>{post.isLive ? 'End Stream' : 'Delete Post'}</span>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setIsReportDialogOpen(true)} className="text-amber-500">
@@ -405,93 +443,117 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           </ReportDialog>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-2 cursor-pointer break-words" onClick={() => onViewPost(post.id)}>
-        <p className="whitespace-pre-wrap">{displayContent}</p>
+      <CardContent className="px-4 pt-0 pb-2 cursor-pointer break-words" onClick={() => !post.isLive && onViewPost(post.id)}>
+        <p className="font-bold text-sm mb-1">{displayContent}</p>
         {isLongPost && !isExpanded && (
           <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
             Read more
           </Button>
         )}
       </CardContent>
-      {post.image && (
-        <div className="relative w-full aspect-video bg-card cursor-pointer" onClick={() => onViewPost(post.id)}>
-          {canShowImage ? (
-            <Image 
-              src={post.image} 
-              alt="Post image" 
-              fill
-              className="object-cover"
-              data-ai-hint={post.imageHint}
-              onError={() => {
-                  if (!navigator.onLine) {
-                      setNetworkError(true);
-                  }
-                  setImageError(true)
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
-              {networkError ? (
-                  <div className="flex items-center justify-center gap-6">
-                      <div className="relative">
-                          <ImageOff className="h-12 w-12 text-gray-400" />
-                          <div className="absolute -bottom-1 -left-1">
-                              <AlertTriangle className="h-6 w-6 fill-gray-500 text-white" strokeWidth={1} />
-                          </div>
-                      </div>
-                      <div className="relative flex items-center justify-center">
-                          <Globe className="h-12 w-12 text-blue-400" />
-                          <Ban className="h-16 w-16 text-red-500/90 absolute" />
-                      </div>
-                  </div>
+      {post.isLive ? (
+          <div className="w-full aspect-video bg-black">
+              {youtubeId ? (
+                  <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                  ></iframe>
               ) : (
-                  <ImageOff className="h-10 w-10" />
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+                      <AlertTriangle className="h-12 w-12 text-red-500" />
+                      <p className="text-sm font-bold">Error 404: Invalid Stream ID</p>
+                  </div>
               )}
-            </div>
-          )}
-        </div>
-      )}
-       {post.video && (
-          <div className="w-full bg-black cursor-pointer" onDoubleClick={handleDoubleClick}>
-            {!videoError ? (
-              <video
-                  ref={videoRef}
-                  src={post.video}
-                  loop
-                  playsInline
-                  controls={showControls}
-                  poster="https://i.postimg.cc/Z54t2P6S/20250927-145323.jpg"
-                  className="w-full aspect-video object-contain"
-                  preload="none"
-                  onError={() => {
-                      if (!navigator.onLine) {
-                          setNetworkError(true);
-                      }
-                      setVideoError(true);
-                  }}
-              />
-            ) : (
-                <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
+          </div>
+      ) : (
+          <>
+            {post.image && (
+                <div className="relative w-full aspect-video bg-card cursor-pointer" onClick={() => onViewPost(post.id)}>
+                {canShowImage ? (
+                    <Image 
+                    src={post.image} 
+                    alt="Post image" 
+                    fill
+                    className="object-cover"
+                    data-ai-hint={post.imageHint}
+                    onError={() => {
+                        if (!navigator.onLine) {
+                            setNetworkError(true);
+                        }
+                        setImageError(true)
+                    }}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
                     {networkError ? (
                         <div className="flex items-center justify-center gap-6">
                             <div className="relative">
-                                <VideoOff className="h-12 w-12 text-gray-400" />
+                                <ImageOff className="h-12 w-12 text-gray-400" />
                                 <div className="absolute -bottom-1 -left-1">
                                     <AlertTriangle className="h-6 w-6 fill-gray-500 text-white" strokeWidth={1} />
                                 </div>
                             </div>
-                           <div className="relative flex items-center justify-center">
+                            <div className="relative flex items-center justify-center">
                                 <Globe className="h-12 w-12 text-blue-400" />
                                 <Ban className="h-16 w-16 text-red-500/90 absolute" />
                             </div>
                         </div>
                     ) : (
-                        <VideoOff className="h-10 w-10" />
+                        <ImageOff className="h-10 w-10" />
                     )}
+                    </div>
+                )}
                 </div>
             )}
-          </div>
-        )}
+            {post.video && (
+                <div className="w-full bg-black cursor-pointer" onDoubleClick={handleDoubleClick}>
+                    {!videoError ? (
+                    <video
+                        ref={videoRef}
+                        src={post.video}
+                        loop
+                        playsInline
+                        controls={showControls}
+                        poster="https://i.postimg.cc/Z54t2P6S/20250927-145323.jpg"
+                        className="w-full aspect-video object-contain"
+                        preload="none"
+                        onError={() => {
+                            if (!navigator.onLine) {
+                                setNetworkError(true);
+                            }
+                            setVideoError(true);
+                        }}
+                    />
+                    ) : (
+                        <div className="w-full aspect-video flex items-center justify-center bg-secondary text-muted-foreground">
+                            {networkError ? (
+                                <div className="flex items-center justify-center gap-6">
+                                    <div className="relative">
+                                        <VideoOff className="h-12 w-12 text-gray-400" />
+                                        <div className="absolute -bottom-1 -left-1">
+                                            <AlertTriangle className="h-6 w-6 fill-gray-500 text-white" strokeWidth={1} />
+                                        </div>
+                                    </div>
+                                <div className="relative flex items-center justify-center">
+                                        <Globe className="h-12 w-12 text-blue-400" />
+                                        <Ban className="h-16 w-16 text-red-500/90 absolute" />
+                                    </div>
+                                </div>
+                            ) : (
+                                <VideoOff className="h-10 w-10" />
+                            )}
+                        </div>
+                    )}
+                </div>
+                )}
+          </>
+      )}
       <div className="flex justify-between items-center text-xs text-muted-foreground p-2 px-4">
         <div className="flex items-center gap-1">
           <ThumbsUp className="h-3 w-3 text-primary" />
@@ -501,28 +563,35 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           <button onClick={handleToggleComments} className="hover:underline">
             {formatCount(sortedComments.length)} Comments
           </button>
-          {showStats && (
-            <>
-                <div className="flex items-center gap-1">
+          {post.isLive ? (
+              <div className="flex items-center gap-1 text-red-500 font-bold">
                   <Eye className="h-4 w-4" />
-                  <span>{formatCount(viewsCount)}</span>
-                </div>
-                {isPublisher && post.user.isMonetized && (
-                  <div className="flex items-center gap-1">
-                    {post.isCopyrighted ? (
-                      <div className="relative text-destructive">
-                          <IndianRupee className="h-4 w-4" />
-                          <X className="absolute top-0 left-0 h-4 w-4" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-green-500">
-                        <DollarSign className="h-4 w-4" />
-                        <span>₹{revenue.toFixed(2)} Revenue</span>
+                  <span>{liveWatchers} Live</span>
+              </div>
+          ) : (
+              showStats && (
+                <>
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{formatCount(viewsCount)}</span>
+                    </div>
+                    {isPublisher && post.user.isMonetized && (
+                      <div className="flex items-center gap-1">
+                        {post.isCopyrighted ? (
+                          <div className="relative text-destructive">
+                              <IndianRupee className="h-4 w-4" />
+                              <X className="absolute top-0 left-0 h-4 w-4" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-green-500">
+                            <DollarSign className="h-4 w-4" />
+                            <span>₹{revenue.toFixed(2)} Revenue</span>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
-            </>
+                </>
+              )
           )}
         </div>
       </div>
@@ -545,7 +614,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={() => onDeletePost(post.id)}
-        title="Do you want to delete this Post?"
+        title={post.isLive ? "Do you want to end this Live stream?" : "Do you want to delete this Post?"}
       />
     )}
     <PostIdDialog 

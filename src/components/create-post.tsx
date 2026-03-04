@@ -1,7 +1,6 @@
-
 'use client';
 import { useState } from 'react';
-import { Video, Image as ImageIcon } from 'lucide-react';
+import { Video, Image as ImageIcon, Radio } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Separator } from './ui/separator';
@@ -11,10 +10,11 @@ import type { User } from './post-card';
 import { PostIcon } from './post-icon';
 import { Progress } from './ui/progress';
 import { MediaPostDialog } from './media-post-dialog';
+import { LivePostDialog } from './live-post-dialog';
 
 
 interface CreatePostProps {
-  onCreatePost: (content: string, mediaType?: 'image' | 'video', mediaUrl?: string) => void;
+  onCreatePost: (content: string, mediaType?: 'image' | 'video' | 'live', mediaUrl?: string) => void;
   currentUser: User;
   postCountToday: number;
 }
@@ -22,6 +22,7 @@ interface CreatePostProps {
 export function CreatePost({ onCreatePost, currentUser, postCountToday }: CreatePostProps) {
   const [postContent, setPostContent] = useState('');
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
+  const [isLiveDialogOpen, setIsLiveDialogOpen] = useState(false);
   const [mediaType, setMediaType] = useState<'image' | 'video' | undefined>(undefined);
 
   const handlePost = () => {
@@ -41,6 +42,10 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
       onCreatePost(content, mediaType, url);
       setPostContent('');
     }
+  };
+
+  const handleLivePost = (title: string, url: string) => {
+    onCreatePost(title, 'live', url);
   };
 
   const postLimit = 2;
@@ -79,8 +84,8 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
           <Separator className="my-3" />
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
-              <Button variant="ghost" className="flex-1 gap-2">
-                  <Video className="h-6 w-6 text-red-500" /> Live
+              <Button variant="ghost" className="flex-1 gap-2" onClick={() => setIsLiveDialogOpen(true)}>
+                  <Radio className="h-6 w-6 text-red-500" /> Live
               </Button>
               <Button variant="ghost" className="flex-1 gap-2" onClick={() => openMediaDialog('image')}>
                   <ImageIcon className="h-6 w-6 text-green-500" /> Photo
@@ -101,6 +106,12 @@ export function CreatePost({ onCreatePost, currentUser, postCountToday }: Create
         mediaType={mediaType}
         initialContent={postContent}
         onCreatePost={handleMediaPost}
+        postLimitReached={postCountToday >= postLimit}
+      />
+      <LivePostDialog
+        isOpen={isLiveDialogOpen}
+        onOpenChange={setIsLiveDialogOpen}
+        onCreateLive={handleLivePost}
         postLimitReached={postCountToday >= postLimit}
       />
     </>

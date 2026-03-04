@@ -1,6 +1,3 @@
-
-
-
 export interface Notification {
   id: string;
   type: 'COPYRIGHT_STRIKE_NEW' | 'COPYRIGHT_STRIKE_UPDATE' | 'NEW_FOLLOWER' | 'POST_LIKE' | 'SYSTEM_MESSAGE';
@@ -139,4 +136,7 @@ export interface Post {
   targetCompletedIn?: number; // hours
   finalViewBoostApplied?: boolean;
   isCopyrighted?: boolean;
+  isLive?: boolean;
+  liveUrl?: boolean;
+  watchers?: number;
 }

@@ -370,7 +370,7 @@ function HomePageContent() {
         return () => clearInterval(interval);
     }, [isClient, posts]);
 
-  const handleCreatePost = (content: string, mediaType?: 'image' | 'video', mediaUrl?: string) => {
+  const handleCreatePost = (content: string, mediaType?: 'image' | 'video' | 'live', mediaUrl?: string) => {
     if (!currentUser) return;
     
     const today = getISTDateString();
@@ -428,6 +428,9 @@ function HomePageContent() {
       (newPostData as any).image = mediaUrl;
     } else if (mediaType === 'video' && mediaUrl) {
       (newPostData as any).video = mediaUrl;
+    } else if (mediaType === 'live' && mediaUrl) {
+      (newPostData as any).isLive = true;
+      (newPostData as any).liveUrl = mediaUrl;
     }
     
     const newPostRef = push(ref(db, 'posts'));
@@ -448,26 +451,27 @@ function HomePageContent() {
     const postToDelete = posts.find(p => p.id === postId);
     if (!postToDelete) return;
 
-    // Decrement stats
-    const viewsLost = postToDelete.views || 0;
-    const likesLost = Object.keys(postToDelete.likes || {}).length;
-    
-    const userRef = ref(db, `users/${currentUser.id}`);
-    const updates: any = { // Use 'any' to dynamically add properties
-        totalViews: Math.max(0, (currentUser.totalViews || 0) - viewsLost),
-        totalLikes: Math.max(0, (currentUser.totalLikes || 0) - likesLost),
-    };
+    // Decrement stats (only for non-live posts)
+    if (!postToDelete.isLive) {
+        const viewsLost = postToDelete.views || 0;
+        const likesLost = Object.keys(postToDelete.likes || {}).length;
+        
+        const userRef = ref(db, `users/${currentUser.id}`);
+        const updates: any = { // Use 'any' to dynamically add properties
+            totalViews: Math.max(0, (currentUser.totalViews || 0) - viewsLost),
+            totalLikes: Math.max(0, (currentUser.totalLikes || 0) - likesLost),
+        };
 
-    // Decrement daily post count if the post was created today
-    const today = getISTDateString();
-    const postCreationDate = new Date(postToDelete.createdAt).toISOString().split('T')[0]; // This can stay UTC as it's a past date
-    const postCreationDateIST = new Date(new Date(postToDelete.createdAt).getTime() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // Decrement daily post count if the post was created today
+        const today = getISTDateString();
+        const postCreationDateIST = new Date(new Date(postToDelete.createdAt).getTime() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    if (postCreationDateIST === today && currentUser.dailyPostCount?.date === today) {
-        updates['dailyPostCount/count'] = Math.max(0, currentUser.dailyPostCount.count - 1);
+        if (postCreationDateIST === today && currentUser.dailyPostCount?.date === today) {
+            updates['dailyPostCount/count'] = Math.max(0, currentUser.dailyPostCount.count - 1);
+        }
+
+        update(userRef, updates);
     }
-
-    update(userRef, updates);
 
 
     // Remove post from DB
@@ -587,14 +591,12 @@ function HomePageContent() {
     if (!currentViewedPosts.includes(postId)) {
       const postRef = ref(db, `posts/${postId}`);
       const post = posts.find(p => p.id === postId);
-      if (post) {
+      if (post && !post.isLive) { // Don't count views for live posts permanently
         const currentViews = post.views || 0;
         update(postRef, { views: currentViews + 1 });
         
         currentViewedPosts.push(postId);
         localStorage.setItem(viewedPostsKey, JSON.stringify(currentViewedPosts));
-        // We do not call setViewedPosts here to keep the feed stable during the session.
-        // The state will be updated on the next page load.
       }
     }
   };
@@ -719,6 +721,10 @@ function HomePageContent() {
         case 'newest':
         default:
              sortedPosts.sort((a, b) => {
+                // Prioritize live posts at the top
+                if (a.isLive && !b.isLive) return -1;
+                if (!a.isLive && b.isLive) return 1;
+
                 const aIsViewed = viewedPosts.includes(a.id);
                 const bIsViewed = viewedPosts.includes(b.id);
                 if (aIsViewed === bIsViewed) {
