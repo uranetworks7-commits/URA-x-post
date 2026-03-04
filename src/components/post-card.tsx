@@ -125,25 +125,6 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     };
   }, [post.isLive, post.id]);
 
-  // Synchronized Fake Viewer fluctuation (Publisher-only logic to keep counts consistent for all users)
-  useEffect(() => {
-    if (!post.isLive || !isPublisher || !post.willHaveFakes || !post.id) return;
-
-    // After 15 seconds, start synchronized fluctuation
-    const timer = setTimeout(() => {
-        const interval = setInterval(() => {
-            const postRef = ref(db, `posts/${post.id}`);
-            // Randomly fluctuate between 2 and 50
-            const nextFakeCount = Math.floor(Math.random() * 49) + 2;
-            update(postRef, { fakeWatchers: nextFakeCount });
-        }, 10000); // Sync update every 10 seconds
-
-        return () => clearInterval(interval);
-    }, 15000);
-
-    return () => clearTimeout(timer);
-  }, [post.isLive, isPublisher, post.willHaveFakes, post.id]);
-
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (video && video.currentTime > 3 && !viewCountedRef.current) {
@@ -154,18 +135,23 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    const mediaEl = post.isLive ? document.getElementById(`live-container-${post.id}`) : video;
+    if (!mediaEl) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
             onPlayVideo(post.id);
-            video.play().catch(error => {
-                console.warn("Autoplay with sound was prevented for video:", post.id, error);
-            });
+            if (video) {
+                video.play().catch(error => {
+                    console.warn("Autoplay with sound was prevented for video:", post.id, error);
+                });
+            }
         } else {
-            video.pause();
-            video.currentTime = 0;
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
             viewCountedRef.current = false; // Reset when out of view
             setShowControls(false); // Hide controls when video scrolls out
         }
@@ -175,8 +161,10 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       }
     );
 
-    observer.observe(video);
-    video.addEventListener('timeupdate', handleTimeUpdate);
+    observer.observe(mediaEl);
+    if (video) {
+        video.addEventListener('timeupdate', handleTimeUpdate);
+    }
 
     return () => {
       observer.disconnect();
@@ -184,7 +172,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         video.removeEventListener('timeupdate', handleTimeUpdate);
       }
     };
-  }, [post.id, onPlayVideo, onViewPost]);
+  }, [post.id, post.isLive, onPlayVideo, onViewPost]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -206,7 +194,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     if (!post.createdAt) return 'just now';
     const secondsSinceCreation = (Date.now() - post.createdAt) / 1000;
     if (secondsSinceCreation < 15) {
-      return 'Publishing...';
+      return post.isLive ? 'Starting...' : 'Publishing...';
     }
     try {
       return formatDistanceToNow(new Date(post.createdAt), { addSuffix: true });
@@ -338,6 +326,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const canShowImage = isImageHostAllowed(post.image) && !imageError;
 
   const youtubeId = post.isLive ? getYouTubeId(post.liveUrl) : null;
+  const isCurrentlyPlaying = playingVideoId === post.id;
 
   return (
     <>
@@ -373,7 +362,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
               )}
             </div>
             <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">{post.isLive ? 'Started streaming now' : timeAgo}</p>
+                <p className="text-xs text-muted-foreground">{post.isLive ? `Stream started ${timeAgo}` : timeAgo}</p>
                 {post.isCopyrighted && (
                     <Badge variant="destructive" className="text-xs">
                         <Copyright className="mr-1 h-3 w-3" />
@@ -419,7 +408,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{post.isLive ? `${formatCount((liveWatchers || 0) + (post.fakeWatchers || 0))} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? `${formatCount(liveWatchers || 0)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -480,18 +469,25 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         )}
       </CardContent>
       {post.isLive ? (
-          <div className="w-full aspect-video bg-black relative" onClick={(e) => e.stopPropagation()}>
+          <div id={`live-container-${post.id}`} className="w-full aspect-video bg-black relative" onClick={(e) => e.stopPropagation()}>
               {youtubeId ? (
-                  <iframe
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                  ></iframe>
+                  isCurrentlyPlaying ? (
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-white gap-2">
+                        <Radio className="h-12 w-12 text-red-500 animate-pulse" />
+                        <p className="text-sm font-bold">Stream Paused</p>
+                    </div>
+                  )
               ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
                       <AlertTriangle className="h-12 w-12 text-red-500" />
@@ -594,7 +590,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           {post.isLive ? (
               <div className="flex items-center gap-1 text-red-500 font-bold">
                   <Eye className="h-4 w-4" />
-                  <span>{formatCount((liveWatchers || 0) + (post.fakeWatchers || 0))} watching</span>
+                  <span>{formatCount(liveWatchers || 0)} watching</span>
               </div>
           ) : (
               showStats && (

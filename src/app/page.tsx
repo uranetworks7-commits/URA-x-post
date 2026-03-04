@@ -431,9 +431,6 @@ function HomePageContent() {
     } else if (mediaType === 'live' && mediaUrl) {
       (newPostData as any).isLive = true;
       (newPostData as any).liveUrl = mediaUrl;
-      // 40% chance to eventually have synchronized fake viewers
-      (newPostData as any).willHaveFakes = Math.random() < 0.4;
-      (newPostData as any).fakeWatchers = 0; // Initially accurate
     }
     
     const newPostRef = push(ref(db, 'posts'));

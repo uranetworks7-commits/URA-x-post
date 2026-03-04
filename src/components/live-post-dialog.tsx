@@ -27,7 +27,7 @@ interface LivePostDialogProps {
 }
 
 const liveFormSchema = z.object({
-  title: z.string().min(1, "Title is required.").max(100, "Title too long."),
+  title: z.string().min(1, "Title is required.").max(100, "Title can't be more than 100 characters."),
   url: z.string().url("Invalid URL.").refine((url) => {
     return url.includes('youtube.com/live/') || url.includes('youtu.be/');
   }, {
@@ -113,9 +113,12 @@ export function LivePostDialog({ isOpen, onOpenChange, onCreateLive, postLimitRe
                         name="title"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Stream Title</FormLabel>
+                                <div className="flex justify-between items-center">
+                                    <FormLabel>Stream Title</FormLabel>
+                                    <span className="text-xs text-muted-foreground">{field.value.length} / 100</span>
+                                </div>
                                 <FormControl>
-                                    <Input placeholder="Enter live title..." {...field} />
+                                    <Input placeholder="Enter live title..." {...field} maxLength={100} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
