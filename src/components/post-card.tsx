@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -366,7 +365,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                    <span>{showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
-                  <ThumbsUp className="mr-2 h-4 w-4" />
+                  <ThumbsUp className="mr-2 h-4 w-4" fill="currentColor" />
                   <span>{formatCount(likesCount)} Likes</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem disabled>
@@ -495,7 +494,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         )}
       <div className="flex justify-between items-center text-xs text-muted-foreground p-2 px-4">
         <div className="flex items-center gap-1">
-          <ThumbsUp className="h-3 w-3 text-primary" />
+          <ThumbsUp className="h-3 w-3 text-primary" fill="currentColor" />
           <span>{formatCount(likesCount)}</span>
         </div>
         <div className="flex gap-4">
@@ -530,7 +529,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       <CardFooter className="p-0 border-t mx-4 flex-col items-start">
         <div className="flex justify-around w-full">
           <Button variant="ghost" className={cn("flex-1 gap-2 font-semibold", isLiked ? "text-primary" : "text-muted-foreground")} onClick={handleLike}>
-            <ThumbsUp className="h-5 w-5" /> Like
+            <ThumbsUp className="h-5 w-5" fill={isLiked ? "currentColor" : "none"} /> Like
           </Button>
           <Button variant="ghost" className="flex-1 gap-2 text-muted-foreground font-semibold" onClick={handleToggleComments}>
             <MessageSquare className="h-5 w-5" /> Comment
