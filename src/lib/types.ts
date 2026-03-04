@@ -137,6 +137,7 @@ export interface Post {
   finalViewBoostApplied?: boolean;
   isCopyrighted?: boolean;
   isLive?: boolean;
-  liveUrl?: boolean;
+  liveUrl?: string;
   watchers?: number;
+  fakeWatchers?: number;
 }

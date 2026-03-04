@@ -431,6 +431,7 @@ function HomePageContent() {
     } else if (mediaType === 'live' && mediaUrl) {
       (newPostData as any).isLive = true;
       (newPostData as any).liveUrl = mediaUrl;
+      (newPostData as any).fakeWatchers = Math.floor(Math.random() * 91) + 10; // 10-100 fake watchers
     }
     
     const newPostRef = push(ref(db, 'posts'));

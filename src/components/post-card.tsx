@@ -107,7 +107,6 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   useEffect(() => {
     if (!post.isLive || !post.id) return;
 
-    const postRef = ref(db, `posts/${post.id}`);
     const watchersRef = ref(db, `posts/${post.id}/watchers`);
 
     // Increment watchers on mount
@@ -400,7 +399,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{post.isLive ? `${liveWatchers} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? `${liveWatchers + (post.fakeWatchers || 0)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -566,7 +565,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           {post.isLive ? (
               <div className="flex items-center gap-1 text-red-500 font-bold">
                   <Eye className="h-4 w-4" />
-                  <span>{liveWatchers} Live</span>
+                  <span>{liveWatchers + (post.fakeWatchers || 0)} Live</span>
               </div>
           ) : (
               showStats && (

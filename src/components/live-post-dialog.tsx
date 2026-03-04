@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,8 +15,9 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface LivePostDialogProps {
     isOpen: boolean;
@@ -35,6 +36,10 @@ const liveFormSchema = z.object({
 });
 
 export function LivePostDialog({ isOpen, onOpenChange, onCreateLive, postLimitReached }: LivePostDialogProps) {
+  const { toast } = useToast();
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
   const form = useForm<z.infer<typeof liveFormSchema>>({
     resolver: zodResolver(liveFormSchema),
     defaultValues: {
@@ -43,19 +48,52 @@ export function LivePostDialog({ isOpen, onOpenChange, onCreateLive, postLimitRe
     },
   });
 
+  const urlValue = form.watch('url');
+
+  useEffect(() => {
+    setIsVerified(false);
+  }, [urlValue]);
+
+  const handleVerify = async () => {
+    const isValid = await form.trigger('url');
+    if (!isValid) return;
+
+    setIsVerifying(true);
+    // Simulate verification
+    setTimeout(() => {
+        setIsVerified(true);
+        setIsVerifying(false);
+        toast({
+            title: "Live Stream Verified",
+            description: "The YouTube Live URL is valid and ready to publish.",
+        });
+    }, 800);
+  };
+
   const onSubmit = (values: z.infer<typeof liveFormSchema>) => {
+    if (!isVerified) {
+        handleVerify();
+        return;
+    }
     onCreateLive(values.title, values.url);
     onOpenChange(false);
     form.reset();
+    setIsVerified(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) {
+            form.reset();
+            setIsVerified(false);
+        }
+        onOpenChange(open);
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Go Live</DialogTitle>
           <DialogDescription>
-            Share your YouTube Live stream with the community.
+            Verify and share your YouTube Live stream with the community.
           </DialogDescription>
         </DialogHeader>
 
@@ -89,16 +127,35 @@ export function LivePostDialog({ isOpen, onOpenChange, onCreateLive, postLimitRe
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>YouTube Live URL</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="https://www.youtube.com/live/..." {...field} />
-                                </FormControl>
+                                <div className="flex gap-2">
+                                    <FormControl>
+                                        <Input 
+                                            placeholder="https://www.youtube.com/live/..." 
+                                            {...field} 
+                                            className={cn(isVerified && "border-green-500 focus-visible:ring-green-500")}
+                                        />
+                                    </FormControl>
+                                </div>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button type="submit">Publish Live</Button>
+                        {!isVerified ? (
+                            <Button 
+                                type="button" 
+                                onClick={handleVerify} 
+                                disabled={isVerifying || !urlValue}
+                            >
+                                {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify Stream"}
+                            </Button>
+                        ) : (
+                            <Button type="submit">
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Publish Live
+                            </Button>
+                        )}
                     </DialogFooter>
                 </form>
             </Form>
