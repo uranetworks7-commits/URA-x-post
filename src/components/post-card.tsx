@@ -29,7 +29,7 @@ import { PostIdDialog } from './post-id-dialog';
 import Link from 'next/link';
 import { DeletePostConfirmDialog } from './delete-post-dialog-confirm';
 import { db } from '@/lib/firebase';
-import { ref, update, push, remove, runTransaction, onValue, off } from 'firebase/database';
+import { ref, update, push, remove, runTransaction, onValue, off, set, onDisconnect } from 'firebase/database';
 import { ScrollArea } from './ui/scroll-area';
 import { PostCommentsDialog } from './post-comments-dialog';
 
@@ -114,25 +114,36 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
     setEditedContent(post.content);
   }, [post.content]);
 
-  // Real-time watcher counting for Live streams
+  // Real-time watcher counting for Live streams using presence
   useEffect(() => {
-    if (!post.isLive || !post.id) return;
+    if (!post.isLive || !post.id || !currentUser?.id) return;
 
-    const watchersRef = ref(db, `posts/${post.id}/watchers`);
+    const myPresenceRef = ref(db, `live_presence/${post.id}/${currentUser.id}`);
+    const allWatchersRef = ref(db, `live_presence/${post.id}`);
+    
+    // We only count as "watching" if the stream is currently visible/playing
+    const isCurrentlyWatching = playingVideoId === post.id;
 
-    // Increment watchers on mount
-    runTransaction(watchersRef, (current) => (current || 0) + 1);
+    if (isCurrentlyWatching) {
+        set(myPresenceRef, true);
+        onDisconnect(myPresenceRef).remove();
+    } else {
+        remove(myPresenceRef);
+    }
 
-    const listener = onValue(watchersRef, (snapshot) => {
-        setLiveWatchers(snapshot.val() || 0);
+    const listener = onValue(allWatchersRef, (snapshot) => {
+        if (snapshot.exists()) {
+            setLiveWatchers(Object.keys(snapshot.val()).length);
+        } else {
+            setLiveWatchers(0);
+        }
     });
 
     return () => {
-        off(watchersRef, 'value', listener);
-        // Decrement watchers on unmount
-        runTransaction(watchersRef, (current) => Math.max(0, (current || 1) - 1));
+        off(allWatchersRef, 'value', listener);
+        remove(myPresenceRef);
     };
-  }, [post.isLive, post.id]);
+  }, [post.isLive, post.id, currentUser?.id, playingVideoId]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -437,7 +448,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{post.isLive ? `${formatCount(liveWatchers || 0)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? `${formatCount(liveWatchers)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -645,7 +656,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           {post.isLive ? (
               <div className="flex items-center gap-1 text-red-500 font-bold">
                   <Eye className="h-4 w-4" />
-                  <span>{formatCount(liveWatchers || 0)} watching</span>
+                  <span>{formatCount(liveWatchers)} watching</span>
               </div>
           ) : (
               showStats && (
