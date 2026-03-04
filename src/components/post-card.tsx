@@ -365,7 +365,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                    <span>{showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
-                  <ThumbsUp className="mr-2 h-4 w-4" fill="currentColor" />
+                  <ThumbsUp className="mr-2 h-4 w-4" />
                   <span>{formatCount(likesCount)} Likes</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem disabled>
@@ -494,7 +494,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         )}
       <div className="flex justify-between items-center text-xs text-muted-foreground p-2 px-4">
         <div className="flex items-center gap-1">
-          <ThumbsUp className="h-3 w-3 text-primary" fill="currentColor" />
+          <ThumbsUp className="h-3 w-3 text-primary" />
           <span>{formatCount(likesCount)}</span>
         </div>
         <div className="flex gap-4">
