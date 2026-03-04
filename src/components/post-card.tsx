@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban, Radio, StopCircle } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, DollarSign, Eye, MoreHorizontal, CheckCircle, Trash2, Send, ShieldAlert, BadgeCheck, PenSquare, Copyright, Copy, X, IndianRupee, UserPlus, ImageOff, VideoOff, AlertTriangle, Globe, Ban, Radio, StopCircle, Check } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -92,6 +92,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [videoError, setVideoError] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [liveWatchers, setLiveWatchers] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(true);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -620,23 +621,26 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         </div>
       </div>
       <CardFooter className="p-0 border-t mx-4 flex-col items-start">
-        {post.isLive && (
+        {post.isLive && showFeedback && (
           <div className="flex w-full gap-2 py-3 border-b border-border/50">
             <Button 
               variant="secondary" 
               size="sm" 
-              className="flex-1 h-9 font-semibold"
-              onClick={() => {}} // nothing happens
+              className="flex-1 h-9 font-semibold gap-2"
+              onClick={() => setShowFeedback(false)}
             >
-              Interested
+              <Check className="h-4 w-4" /> Interested
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
-              className="flex-1 h-9 font-semibold text-muted-foreground hover:text-foreground"
-              onClick={() => onNotInterested?.(post.id)}
+              className="flex-1 h-9 font-semibold text-muted-foreground hover:text-foreground gap-2"
+              onClick={() => {
+                onNotInterested?.(post.id);
+                setShowFeedback(false);
+              }}
             >
-              Not Interested
+              <Ban className="h-4 w-4" /> Not Interested
             </Button>
           </div>
         )}
