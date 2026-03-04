@@ -45,6 +45,7 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(post.content);
+    const editCharLimit = 4000;
 
     useEffect(() => {
         setEditedContent(post.content);
@@ -122,11 +123,17 @@ export function PostDetailsDialog({ isOpen, onOpenChange, post, currentUser }: P
             <div>
               {isEditing ? (
                   <div className="space-y-2">
-                      <Textarea 
-                        value={editedContent}
-                        onChange={(e) => setEditedContent(e.target.value)}
-                        className="min-h-[120px] text-sm font-medium"
-                      />
+                      <div className="space-y-1">
+                          <Textarea 
+                            value={editedContent}
+                            onChange={(e) => setEditedContent(e.target.value)}
+                            className="min-h-[120px] text-sm font-medium"
+                            maxLength={editCharLimit}
+                          />
+                          <div className="text-[10px] text-muted-foreground text-right">
+                              {editedContent.length} / {editCharLimit}
+                          </div>
+                      </div>
                       <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
                               <X className="h-4 w-4 mr-1" /> Cancel

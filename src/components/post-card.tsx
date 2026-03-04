@@ -104,6 +104,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const [showControls, setShowControls] = useState(false);
 
   const charLimit = 800;
+  const editCharLimit = 4000;
   const isLongPost = post.content.length > charLimit;
   const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
@@ -491,11 +492,17 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
       >
         {isEditing ? (
             <div className="space-y-2 mb-2">
-                <Textarea 
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    className="text-sm font-bold min-h-[100px]"
-                />
+                <div className="space-y-1">
+                    <Textarea 
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="text-sm font-bold min-h-[100px]"
+                        maxLength={editCharLimit}
+                    />
+                    <div className="text-[10px] text-muted-foreground text-right">
+                        {editedContent.length} / {editCharLimit}
+                    </div>
+                </div>
                 <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
                         <X className="h-4 w-4 mr-1" /> Cancel
