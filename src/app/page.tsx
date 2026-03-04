@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '@/lib/firebase';
@@ -503,8 +501,9 @@ function HomePageContent() {
       const updates: { [key: string]: any } = {};
       updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
       
-      // Create notification for post author (if not the current user and not already notified)
-      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
+      // Create notification for post author (if not the current user, not already notified, and they both follow each other)
+      const isMutual = !!(currentUser.following?.[post!.user.id] && currentUser.followers?.[post!.user.id]);
+      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id]) && isMutual) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,

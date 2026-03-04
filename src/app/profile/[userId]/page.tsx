@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/lib/firebase';
@@ -161,7 +159,8 @@ export default function ProfilePage({ params }: { params: { userId: string } }) 
       const updates: { [key: string]: any } = {};
       updates[`/posts/${postId}/likes/${currentUser.id}`] = true;
 
-      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id])) {
+      const isMutual = !!(currentUser.following?.[post!.user.id] && currentUser.followers?.[post!.user.id]);
+      if (post && post.user.id !== currentUser.id && (!post.likeNotified || !post.likeNotified[currentUser.id]) && isMutual) {
           const notifRef = push(ref(db, `users/${post.user.id}/notifications`));
           const newNotification: Notification = {
               id: notifRef.key!,
