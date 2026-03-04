@@ -140,4 +140,5 @@ export interface Post {
   liveUrl?: string;
   watchers?: number;
   fakeWatchers?: number;
+  willHaveFakes?: boolean;
 }

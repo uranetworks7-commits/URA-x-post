@@ -103,6 +103,8 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   const isLongPost = post.content.length > charLimit;
   const displayContent = isLongPost && !isExpanded ? `${post.content.substring(0, charLimit)}...` : post.content;
 
+  const isPublisher = post.user.id === currentUser.id;
+
   // Real-time watcher counting for Live streams
   useEffect(() => {
     if (!post.isLive || !post.id) return;
@@ -122,6 +124,25 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         runTransaction(watchersRef, (current) => Math.max(0, (current || 1) - 1));
     };
   }, [post.isLive, post.id]);
+
+  // Synchronized Fake Viewer fluctuation (Publisher-only logic to keep counts consistent for all users)
+  useEffect(() => {
+    if (!post.isLive || !isPublisher || !post.willHaveFakes || !post.id) return;
+
+    // After 15 seconds, start synchronized fluctuation
+    const timer = setTimeout(() => {
+        const interval = setInterval(() => {
+            const postRef = ref(db, `posts/${post.id}`);
+            // Randomly fluctuate between 2 and 50
+            const nextFakeCount = Math.floor(Math.random() * 49) + 2;
+            update(postRef, { fakeWatchers: nextFakeCount });
+        }, 10000); // Sync update every 10 seconds
+
+        return () => clearInterval(interval);
+    }, 15000);
+
+    return () => clearTimeout(timer);
+  }, [post.isLive, isPublisher, post.willHaveFakes, post.id]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -284,7 +305,6 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
   };
 
 
-  const isPublisher = post.user.id === currentUser.id;
   const viewsCount = parseCount(post.views);
   
   const isPostEligible = useMemo(() => viewsCount > 1000 && likesCount >= 10, [viewsCount, likesCount]);
@@ -399,7 +419,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
                 <DropdownMenuSeparator />
                  <DropdownMenuItem disabled>
                    <Eye className="mr-2 h-4 w-4" />
-                   <span>{post.isLive ? `${liveWatchers + (post.fakeWatchers || 0)} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
+                   <span>{post.isLive ? `${formatCount((liveWatchers || 0) + (post.fakeWatchers || 0))} watching` : showStats ? `${formatCount(viewsCount)} Views` : 'Counting Views...'}</span>
                  </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                   <ThumbsUp className="mr-2 h-4 w-4" />
@@ -442,7 +462,16 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           </ReportDialog>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-2 cursor-pointer break-words" onClick={() => !post.isLive && onViewPost(post.id)}>
+      <CardContent 
+        className={cn("px-4 pt-0 pb-2 break-words", !post.isLive && "cursor-pointer")} 
+        onClick={(e) => {
+            if (post.isLive) {
+                e.stopPropagation();
+                return;
+            }
+            onViewPost(post.id);
+        }}
+      >
         <p className="font-bold text-sm mb-1">{displayContent}</p>
         {isLongPost && !isExpanded && (
           <Button variant="link" className="p-0 h-auto text-blue-500" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
@@ -451,7 +480,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
         )}
       </CardContent>
       {post.isLive ? (
-          <div className="w-full aspect-video bg-black">
+          <div className="w-full aspect-video bg-black relative" onClick={(e) => e.stopPropagation()}>
               {youtubeId ? (
                   <iframe
                       width="100%"
@@ -565,7 +594,7 @@ export function PostCard({ post, currentUser, onDeletePost, onLikePost, onAddCom
           {post.isLive ? (
               <div className="flex items-center gap-1 text-red-500 font-bold">
                   <Eye className="h-4 w-4" />
-                  <span>{liveWatchers + (post.fakeWatchers || 0)} Live</span>
+                  <span>{formatCount((liveWatchers || 0) + (post.fakeWatchers || 0))} watching</span>
               </div>
           ) : (
               showStats && (
