@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
@@ -29,7 +28,7 @@ interface PendingWithdrawal extends Withdrawal {
 
 const createUserSchema = z.object({
   mainAccountUsername: z.string().min(3, "Main account username is required."),
-  name: z.string().min(3, "Chat name is required."),
+  name: z.string().min(3, "Chat name is required.").max(20, "Chat name cannot exceed 20 characters."),
   avatar: z.string().url("Please enter a valid avatar URL."),
 });
 
@@ -120,7 +119,7 @@ function CreateUserForm({ onAccountCreated }: { onAccountCreated: () => void }) 
                                 <FormItem>
                                     <FormLabel className="text-xs">Chat Name</FormLabel>
                                     <FormControl>
-                                        <Input className="h-8 text-xs" placeholder="e.g. ChatUser" {...field} />
+                                        <Input className="h-8 text-xs" placeholder="e.g. ChatUser" {...field} maxLength={20} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

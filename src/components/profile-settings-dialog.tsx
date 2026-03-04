@@ -79,6 +79,7 @@ export function ProfileSettingsDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="col-span-3"
+              maxLength={20}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
